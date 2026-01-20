@@ -97,9 +97,5 @@ export default defineConfig({
       pattern: 'swagger.yaml',
       reloadServer: true,
     },
-    {
-      pattern: 'config/keys/**',
-      reloadServer: false,
-    },
   ],
 })

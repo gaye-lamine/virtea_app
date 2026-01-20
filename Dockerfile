@@ -19,9 +19,11 @@ FROM base AS production
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Copy production dependencies
 COPY package*.json ./
 RUN npm ci --omit=dev
 
+# Copy build artifacts
 COPY --from=build /app/build ./
 
 EXPOSE 3333
