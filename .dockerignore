@@ -8,8 +8,9 @@ tests
 README.md
 ARCHITECTURE.md
 swagger.yaml
-Dockerfile
-.dockerignore
+# Docker files (should not be ignored during build stage if using them as part of build)
+# Dockerfile
+# .dockerignore
 npm-debug.log
 error.log
 package-lock.json
