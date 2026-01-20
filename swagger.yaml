@@ -1,0 +1,882 @@
+openapi: 3.1.0
+info:
+  title: API Virtea
+  description: API pour la plateforme d'apprentissage Virtea, incluant la gestion des leçons, le streaming audio TTS, les profils utilisateurs et les outils pédagogiques IA (Q&A, Quiz).
+  version: 1.0.0
+  license:
+    name: UNLICENSED
+  contact:
+    name: Support Virtea
+    email: support@virtea.com
+
+servers:
+  - url: /api/v1
+    description: Serveur de production v1
+
+security:
+  - {} # Par défaut, pas de sécurité requise pour tous les endpoints sauf mention contraire
+
+tags:
+  - name: Lessons
+    description: Gestion des leçons et du contenu pédagogique
+  - name: Audio
+    description: Génération et streaming audio (TTS)
+  - name: Profiles
+    description: Gestion des profils utilisateurs liés aux appareils
+  - name: Progress
+    description: Suivi de la progression des utilisateurs sur les leçons
+  - name: QA
+    description: Questions-Réponses pédagogiques générées par IA
+  - name: Quiz
+    description: Quiz d'évaluation générés par IA
+
+components:
+  securitySchemes:
+    DeviceIdAuth:
+      type: apiKey
+      in: header
+      name: X-Device-Id
+      description: Identifiant unique de l'appareil pour l'authentification et le contexte utilisateur.
+
+  schemas:
+    # --- Erreurs ---
+    Error:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Message d'erreur explicatif
+        error:
+          type: string
+          example: "Détails techniques optionnels"
+
+    # --- Modèles ---
+    Lesson:
+      type: object
+      required: [id, title, status]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          oneOf:
+            - type: string
+            - type: "null"
+        plan:
+          type: string
+          description: Chaîne JSON du plan de la leçon
+        content:
+          type: string
+          description: Chaîne JSON du contenu complet
+        status:
+          type: string
+          enum: [draft, processing, plan_ready, intro_ready, ready]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserProfile:
+      type: object
+      required: [id, profileType, deviceId]
+      properties:
+        id:
+          type: integer
+        profileType:
+          type: string
+          example: "Étudiant"
+        educationLevel:
+          oneOf:
+            - type: string
+            - type: "null"
+          example: "Master"
+        specialty:
+          oneOf:
+            - type: string
+            - type: "null"
+          example: "Informatique"
+        name:
+          type: string
+          example: "Jean Dupont"
+        birthdate:
+          oneOf:
+            - type: string
+              format: date
+            - type: "null"
+        deviceId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    LessonProgress:
+      type: object
+      required: [id, lessonId, deviceId, currentSectionIndex, isCompleted]
+      properties:
+        id:
+          type: integer
+        lessonId:
+          type: integer
+        deviceId:
+          type: string
+        currentSectionIndex:
+          type: integer
+        currentSubsectionIndex:
+          type: integer
+        completedSections:
+          type: array
+          items:
+            type: integer
+        isCompleted:
+          type: boolean
+        lastReviewedAt:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        nextReviewAt:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        reviewCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    QAItem:
+      type: object
+      required: [id, question, answer, category]
+      properties:
+        id:
+          type: integer
+        question:
+          type: string
+        answer:
+          type: string
+        category:
+          type: string
+          enum: [definition, explanation, example, application, comparison, history, general]
+        relatedTopics:
+          type: array
+          items:
+            type: string
+        difficulty:
+          type: integer
+          minimum: 1
+          maximum: 5
+
+    QASession:
+      type: object
+      required: [id, lessonId, title, items]
+      properties:
+        id:
+          type: integer
+        lessonId:
+          type: integer
+        title:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QAItem'
+        createdAt:
+          type: string
+          format: date-time
+
+    QuizQuestion:
+      type: object
+      required: [id, question, options, correctAnswerIndex, explanation]
+      properties:
+        id:
+          type: integer
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+          minItems: 4
+          maxItems: 4
+        correctAnswerIndex:
+          type: integer
+        explanation:
+          type: string
+        difficulty:
+          type: integer
+          minimum: 1
+          maximum: 5
+
+    Quiz:
+      type: object
+      required: [id, lessonId, title, questions]
+      properties:
+        id:
+          type: integer
+        lessonId:
+          type: integer
+        title:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizQuestion'
+        createdAt:
+          type: string
+          format: date-time
+
+paths:
+  # --- Lessons ---
+  /lessons:
+    get:
+      tags: [Lessons]
+      summary: Lister toutes les leçons
+      operationId: listLessons
+      responses:
+        '200':
+          description: Liste des leçons récupérée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Lesson'
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags: [Lessons]
+      summary: Créer une nouvelle leçon
+      description: Initie la génération d'une leçon via l'IA en arrière-plan.
+      operationId: createLesson
+      security:
+        - DeviceIdAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                  minLength: 3
+                  maxLength: 200
+                deviceId:
+                  type: string
+                  description: "Optionnel si X-Device-Id est présent dans les headers"
+      responses:
+        '201':
+          description: Leçon créée, génération initiée
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Lesson'
+                  message:
+                    type: string
+        '400':
+          description: Erreur de validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /lessons/test:
+    post:
+      tags: [Lessons]
+      summary: Créer une leçon de test
+      description: Génère immédiatement une leçon avec du contenu fictif pour les tests.
+      operationId: createTestLesson
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+      responses:
+        '201':
+          description: Leçon de test créée
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Lesson'
+        '400':
+          description: Erreur de validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /lessons/{id}:
+    get:
+      tags: [Lessons]
+      summary: Récupérer une leçon par ID
+      operationId: getLessonById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Détails de la leçon
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Lesson'
+        '404':
+          description: Leçon non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # --- Audio ---
+  /audio/stream:
+    post:
+      tags: [Audio]
+      summary: Générer de l'audio en streaming (TTS)
+      operationId: streamAudio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:
+                  type: string
+                  minLength: 1
+                  maxLength: 5000
+                voice:
+                  type: string
+                  default: "fr-FR-Neural2-A"
+      responses:
+        '200':
+          description: Flux audio MPEG
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Erreur de validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /audio/url:
+    post:
+      tags: [Audio]
+      summary: Obtenir l'URL Cloudinary d'un audio généré
+      operationId: getAudioUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:
+                  type: string
+                voice:
+                  type: string
+      responses:
+        '200':
+          description: URL de l'audio sauvegardé
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required: [audioUrl]
+                    properties:
+                      audioUrl:
+                        type: string
+                      text:
+                        type: string
+                      voice:
+                        type: string
+        '400':
+          description: Erreur de validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # --- Profiles ---
+  /profiles:
+    post:
+      tags: [Profiles]
+      summary: Créer ou mettre à jour un profil utilisateur
+      operationId: upsertProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deviceId]
+              properties:
+                deviceId:
+                  type: string
+                profileType:
+                  type: string
+                  enum: [Élève, Étudiant, Professionnel, Autre]
+                educationLevel:
+                  type: string
+                specialty:
+                  type: string
+                name:
+                  type: string
+                birthdate:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: Profil mis à jour
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+        '201':
+          description: Profil créé
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Erreur lors de la création/mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /profiles/{deviceId}:
+    get:
+      tags: [Profiles]
+      summary: Récupérer un profil par Device ID
+      operationId: getProfileByDeviceId
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Détails du profil
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+        '404':
+          description: Profil non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # --- Progress ---
+  /progress:
+    get:
+      tags: [Progress]
+      summary: Récupérer toutes les progressions de l'utilisateur
+      operationId: listProgresses
+      security:
+        - DeviceIdAuth: []
+      responses:
+        '200':
+          description: Liste des progressions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LessonProgress'
+        '400':
+          description: Device ID manquant ou invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /lessons/{lessonId}/progress:
+    get:
+      tags: [Progress]
+      summary: Récupérer la progression d'une leçon spécifique
+      operationId: getLessonProgress
+      security:
+        - DeviceIdAuth: []
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Progression de la leçon
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/LessonProgress'
+                      - type: object
+                        required: [currentStep, totalSteps, completed]
+                        properties:
+                          currentStep:
+                            type: integer
+                          totalSteps:
+                            type: integer
+                          completed:
+                            type: boolean
+        '400':
+          description: Erreur requête
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags: [Progress]
+      summary: Mettre à jour la progression d'une leçon
+      operationId: updateLessonProgress
+      security:
+        - DeviceIdAuth: []
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentStep:
+                  type: integer
+                totalSteps:
+                  type: integer
+                completed:
+                  type: boolean
+                currentSectionIndex:
+                  type: integer
+                currentSubsectionIndex:
+                  type: integer
+                completedSections:
+                  type: array
+                  items:
+                    type: integer
+                isCompleted:
+                  type: boolean
+      responses:
+        '200':
+          description: Progression mise à jour
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/LessonProgress'
+        '400':
+          description: Erreur lors de la mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # --- QA ---
+  /qa/generate:
+    post:
+      tags: [QA]
+      summary: Générer une session Q&A pour une leçon
+      operationId: generateQaSession
+      security:
+        - DeviceIdAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lessonId, title, content]
+              properties:
+                lessonId:
+                  type: integer
+                title:
+                  type: string
+                content:
+                  type: object
+                  description: "Objet JSON représentant le contenu de la leçon"
+      responses:
+        '201':
+          description: Session Q&A générée
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/QASession'
+                  message:
+                    type: string
+        '400':
+          description: Paramètres manquants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /qa/ask:
+    post:
+      tags: [QA]
+      summary: Poser une question personnalisée sur une leçon
+      operationId: askQuestion
+      security:
+        - DeviceIdAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lessonId, question]
+              properties:
+                lessonId:
+                  type: integer
+                question:
+                  type: string
+      responses:
+        '200':
+          description: Réponse générée
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, answer]
+                properties:
+                  success:
+                    type: boolean
+                  answer:
+                    type: string
+                  message:
+                    type: string
+        '400':
+          description: Paramètres manquants ou contenu leçon invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /qa/sessions:
+    get:
+      tags: [QA]
+      summary: Récupérer les sessions Q&A sauvegardées (Placeholder)
+      operationId: listQaSessions
+      security:
+        - DeviceIdAuth: []
+      responses:
+        '200':
+          description: Liste des sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  message:
+                    type: string
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # --- Quiz ---
+  /quiz/generate:
+    post:
+      tags: [Quiz]
+      summary: Générer un quiz pour une leçon
+      operationId: generateQuiz
+      security:
+        - DeviceIdAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lessonId, title, content]
+              properties:
+                lessonId:
+                  type: integer
+                title:
+                  type: string
+                content:
+                  type: object
+      responses:
+        '201':
+          description: Quiz généré avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Quiz'
+                  message:
+                    type: string
+        '400':
+          description: Paramètres manquants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /quiz:
+    get:
+      tags: [Quiz]
+      summary: Récupérer les quiz sauvegardés (Placeholder)
+      operationId: listQuizzes
+      security:
+        - DeviceIdAuth: []
+      responses:
+        '200':
+          description: Liste des quiz
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  message:
+                    type: string
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
