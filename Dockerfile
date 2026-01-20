@@ -27,7 +27,7 @@ RUN npm ci --omit=dev
 COPY --from=build /app/build ./build
 
 # Copy required runtime files
-COPY .env .env
+# COPY .env .env
 
 EXPOSE 3333
 
