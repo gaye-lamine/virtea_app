@@ -15,7 +15,7 @@ export class TTSService {
   constructor() {
     this.client = new TextToSpeechClient({
       projectId: env.get('GOOGLE_CLOUD_PROJECT_ID'),
-      keyFilename: env.get('GOOGLE_CLOUD_KEY_FILE')
+      credentials: JSON.parse(env.get('GOOGLE_CLOUD_CREDENTIALS'))
     })
 
     // Configuration Cloudinary
@@ -48,7 +48,7 @@ export class TTSService {
       }
 
       const [response] = await this.client.synthesizeSpeech(request)
-      
+
       if (!response.audioContent) {
         throw new Error('Aucun contenu audio généré')
       }
@@ -64,7 +64,7 @@ export class TTSService {
     try {
       // Préparer toutes les tâches audio en parallèle
       const audioTasks: Array<{ key: string, text: string }> = []
-      
+
       // Audio d'introduction
       audioTasks.push({
         key: 'intro',
@@ -97,11 +97,11 @@ export class TTSService {
       }
 
       console.log(`🚀 Génération de ${audioTasks.length} fichiers audio en parallèle...`)
-      
+
       // Générer tous les audios en parallèle (par batch de 5 pour ne pas surcharger)
       const batchSize = 5
       const audioFiles: { [key: string]: string } = {}
-      
+
       for (let i = 0; i < audioTasks.length; i += batchSize) {
         const batch = audioTasks.slice(i, i + batchSize)
         const batchResults = await Promise.all(
@@ -111,11 +111,11 @@ export class TTSService {
             return { key: task.key, url }
           })
         )
-        
+
         batchResults.forEach(result => {
           audioFiles[result.key] = result.url
         })
-        
+
         console.log(`✅ Batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(audioTasks.length / batchSize)} terminé`)
       }
 
@@ -160,7 +160,7 @@ export class TTSService {
     try {
       // Convertir le buffer en base64 pour l'upload Cloudinary
       const base64Audio = `data:audio/mp3;base64,${audioBuffer.toString('base64')}`
-      
+
       // Upload vers Cloudinary avec optimisation web
       const result = await cloudinary.uploader.upload(base64Audio, {
         resource_type: 'video', // Cloudinary utilise 'video' pour les fichiers audio
@@ -168,7 +168,7 @@ export class TTSService {
         public_id: `${filename}_${Date.now()}`,
         format: 'mp3',
         transformation: [
-          { 
+          {
             quality: 'auto',
             audio_codec: 'mp3',
             bit_rate: '128k', // Bitrate optimisé pour le web

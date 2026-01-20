@@ -36,7 +36,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   */
   GOOGLE_GENERATIVE_AI_API_KEY: Env.schema.string(),
   GOOGLE_CLOUD_PROJECT_ID: Env.schema.string(),
-  GOOGLE_CLOUD_KEY_FILE: Env.schema.string(),
+  GOOGLE_CLOUD_CREDENTIALS: Env.schema.string(),
   CLOUDINARY_CLOUD_NAME: Env.schema.string(),
   CLOUDINARY_API_KEY: Env.schema.string(),
   CLOUDINARY_API_SECRET: Env.schema.string()
