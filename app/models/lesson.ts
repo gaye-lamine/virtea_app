@@ -12,10 +12,10 @@ export default class Lesson extends BaseModel {
   declare description: string
 
   @column()
-  declare plan: string // JSON string du plan de la leçon
+  declare plan: string 
 
   @column()
-  declare content: string // JSON string du contenu complet
+  declare content: string
 
   @column()
   declare status: 'draft' | 'processing' | 'plan_ready' | 'intro_ready' | 'ready'

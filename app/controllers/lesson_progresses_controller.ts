@@ -47,7 +47,7 @@ export default class LessonProgressesController {
    */
   async update({ params, request, response }: HttpContext) {
     try {
-      console.log('📥 Requête progression reçue:', {
+      console.log('Requête progression reçue:', {
         lessonId: params.lessonId,
         headers: request.headers(),
         body: request.body()
@@ -57,7 +57,7 @@ export default class LessonProgressesController {
       console.log('Device ID:', deviceId)
       
       if (!deviceId) {
-        console.log('❌ Device ID manquant')
+        console.log('Device ID manquant')
         return response.badRequest({ error: 'Device ID requis' })
       }
 
@@ -79,7 +79,6 @@ export default class LessonProgressesController {
         .first()
 
       if (!progress) {
-        // Créer nouvelle progression
         progress = await LessonProgress.create({
           lessonId: params.lessonId,
           deviceId,
@@ -91,7 +90,6 @@ export default class LessonProgressesController {
           nextReviewAt: DateTime.now().plus({ days: 2 }), // Révision dans 2 jours
         })
       } else {
-        // Mettre à jour
         if (data.currentStep !== undefined) {
           progress.currentSectionIndex = data.currentStep
         }
@@ -113,8 +111,7 @@ export default class LessonProgressesController {
         
         progress.lastReviewedAt = DateTime.now()
         
-        // Calculer prochaine révision (révision espacée)
-        const reviewIntervals = [2, 7, 14, 30] // jours
+        const reviewIntervals = [2, 7, 14, 30]
         const nextInterval = reviewIntervals[Math.min(progress.reviewCount, reviewIntervals.length - 1)]
         progress.nextReviewAt = DateTime.now().plus({ days: nextInterval })
         progress.reviewCount += 1

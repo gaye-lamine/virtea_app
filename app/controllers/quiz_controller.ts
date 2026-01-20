@@ -1,5 +1,4 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import Lesson from '#models/lesson'
 import UserProfile from '#models/user_profile'
 import { QuizGeneratorService } from '#services/quiz_generator_service'
 
@@ -25,7 +24,6 @@ export default class QuizController {
         })
       }
 
-      // Récupérer le profil utilisateur si deviceId est fourni
       let userProfile: { profileType: string; educationLevel?: string; specialty?: string } | undefined
       if (deviceId) {
         try {
@@ -66,7 +64,7 @@ export default class QuizController {
   }
 
   /**
-   * Récupérer les quiz sauvegardés (placeholder pour future implémentation)
+   * Récupérer les quiz sauvegardés (dinako deff apres)
    */
   async index({ request, response }: HttpContext) {
     try {

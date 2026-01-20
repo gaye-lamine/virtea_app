@@ -25,7 +25,6 @@ export default class AudioController {
         voiceName: voice
       })
 
-      // Définir les headers pour le streaming audio
       response.header('Content-Type', 'audio/mpeg')
       response.header('Content-Length', audioBuffer.length.toString())
       response.header('Accept-Ranges', 'bytes')
@@ -62,7 +61,6 @@ export default class AudioController {
         voiceName: voice
       })
 
-      // Sauvegarder sur Cloudinary et retourner l'URL
       const filename = `stream_${Date.now()}`
       const audioUrl = await ttsService['saveAudioFile'](audioBuffer, filename)
 

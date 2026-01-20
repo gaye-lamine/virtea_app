@@ -16,17 +16,14 @@ export default class UserProfilesController {
         'deviceId',
       ])
 
-      // Vérifier si un profil existe déjà pour ce device
       const existingProfile = await UserProfile.findBy('device_id', data.deviceId)
 
       if (existingProfile) {
-        // Mettre à jour
         existingProfile.merge(data)
         await existingProfile.save()
         return response.ok({ data: existingProfile })
       }
 
-      // Créer nouveau profil
       const profile = await UserProfile.create(data)
       return response.created({ data: profile })
     } catch (error) {

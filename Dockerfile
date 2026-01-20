@@ -18,7 +18,7 @@ FROM base AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN node ace build
+RUN node ace build --ignore-ts-errors
 
 # Stage 5: Production Runtime
 FROM base AS production

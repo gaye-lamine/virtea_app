@@ -25,7 +25,6 @@ export default class QAController {
         })
       }
 
-      // Récupérer le profil utilisateur si deviceId est fourni
       let userProfile: { profileType: string; educationLevel?: string; specialty?: string } | undefined
       if (deviceId) {
         try {
@@ -80,7 +79,6 @@ export default class QAController {
         })
       }
 
-      // Récupérer la leçon
       const lesson = await Lesson.findOrFail(lessonId)
       let lessonContent = null
       
@@ -105,7 +103,6 @@ export default class QAController {
         })
       }
 
-      // Récupérer le profil utilisateur si deviceId est fourni
       let userProfile: { profileType: string; educationLevel?: string; specialty?: string } | undefined
       if (deviceId) {
         try {
@@ -145,7 +142,7 @@ export default class QAController {
   }
 
   /**
-   * Récupérer les sessions Q&A sauvegardées (placeholder pour future implémentation)
+   * Récupérer les sessions Q&A sauvegardées (dinako deff apres )
    */
   async sessions({ request, response }: HttpContext) {
     try {

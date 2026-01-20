@@ -12,16 +12,13 @@ export default class LessonsController {
     try {
       const payload = await request.validateUsing(createLessonValidator)
       
-      // Récupérer le deviceId depuis le header ou le body
       const deviceId = request.header('X-Device-Id') || request.input('deviceId')
       
-      // Créer la leçon avec le statut "processing"
       const lesson = await Lesson.create({
         title: payload.title,
         status: 'processing'
       })
 
-      // Récupérer le profil utilisateur si deviceId est fourni
       let userProfile: { profileType: string; educationLevel?: string; specialty?: string } | undefined
       if (deviceId) {
         try {
@@ -41,10 +38,8 @@ export default class LessonsController {
         }
       }
 
-      // Déclencher la génération du contenu en arrière-plan
       const generatorService = new LessonGeneratorService()
       
-      // Lancer la génération de façon asynchrone (sans attendre) avec le profil
       generatorService.generateLesson(lesson.id, lesson.title, userProfile).catch(error => {
         console.error('Erreur génération leçon:', error)
       })
