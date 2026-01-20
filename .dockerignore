@@ -13,4 +13,4 @@ swagger.yaml
 # .dockerignore
 npm-debug.log
 error.log
-package-lock.json
+# package-lock.json
