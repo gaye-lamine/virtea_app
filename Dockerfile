@@ -14,18 +14,21 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN node ace build --ignore-ts-errors
 
-# Stage 4: Production Runtime
+# Stage 4: Production
 FROM base AS production
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Copy production dependencies
+# Install production deps
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Copy build artifacts
-COPY --from=build /app/build ./
+# Copy build output
+COPY --from=build /app/build ./build
+
+# Copy required runtime files
+COPY .env .env
 
 EXPOSE 3333
 
-CMD ["node", "bin/server.js"]
+CMD ["node", "build/bin/server.js"]
