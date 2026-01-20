@@ -64,6 +64,7 @@
     "cloudinary": "^2.8.0",
     "luxon": "^3.7.2",
     "mysql2": "^3.16.0",
+    "pg": "^8.17.1",
     "reflect-metadata": "^0.2.2"
   },
   "hotHook": {

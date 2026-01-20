@@ -76,10 +76,7 @@ router.group(() => {
   router.get('/quiz', '#controllers/quiz_controller.index')
 }).prefix('/api/v1')
 
-// Route WebSocket pour les mises à jour en temps réel
-router.get('/ws', ({ request, response }) => {
-  return transmit.subscription(request, response)
-})
+transmit.registerRoutes()
 
 // Route de santé / health check
 router.get('/health', async () => {
