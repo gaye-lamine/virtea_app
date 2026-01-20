@@ -7,7 +7,6 @@ build
 tests
 README.md
 ARCHITECTURE.md
-swagger.yaml
 # Docker files (should not be ignored during build stage if using them as part of build)
 # Dockerfile
 # .dockerignore
