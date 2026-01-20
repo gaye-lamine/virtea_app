@@ -27,7 +27,8 @@ RUN npm ci --omit=dev
 COPY --from=build /app/build ./build
 
 # Copy required runtime files
-# COPY .env .env
+COPY swagger.yaml /app/swagger.yaml
+# COPY .env .env   # Dokploy injectera les env variables
 
 EXPOSE 3333
 
