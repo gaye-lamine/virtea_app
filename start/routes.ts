@@ -80,3 +80,11 @@ router.group(() => {
 router.get('/ws', ({ request, response }) => {
   return transmit.subscription(request, response)
 })
+
+// Route de santé / health check
+router.get('/health', async () => {
+  return {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  }
+})
