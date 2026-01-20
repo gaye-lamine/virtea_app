@@ -80,3 +80,6 @@ router.group(() => {
 router.get('/ws', ({ request, response }) => {
   return transmit.subscription(request, response)
 })
+router.get('/swagger.json', async () => {
+  return readFileSync('/app/swagger.yaml', 'utf-8')
+})
