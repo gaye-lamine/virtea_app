@@ -1,50 +1,40 @@
 # =========================
-# Stage 1: Base
+# Stage 1: Dependencies
 # =========================
-FROM node:20-alpine AS base
+FROM node:20-alpine AS deps
 WORKDIR /app
 
-# =========================
-# Stage 2: Dependencies
-# =========================
-FROM base AS deps
 COPY package*.json ./
 RUN npm ci
 
 # =========================
-# Stage 3: Build
+# Stage 2: Build
 # =========================
-FROM base AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 
-# Copier les dépendances installées
 COPY --from=deps /app/node_modules ./node_modules
-
-# Copier tout le code
 COPY . .
 
-# Build Adonis (TypeScript → JS)
 RUN node ace build --ignore-ts-errors
 
 # =========================
-# Stage 4: Production
+# Stage 3: Production
 # =========================
-FROM base AS production
+FROM node:20-alpine AS production
 WORKDIR /app
+
 ENV NODE_ENV=production
 
-# Installer toutes les dépendances pour pouvoir utiliser Ace (migrations)
-COPY package*.json ./
-RUN npm ci
+# Copier uniquement les dépendances nécessaires
+COPY --from=deps /app/node_modules ./node_modules
 
-# Copier le build
+# Copier uniquement le build final
 COPY --from=build /app/build ./build
 
-# Copier swagger (optionnel)
-COPY swagger.yaml /app/swagger.yaml
+# Swagger (optionnel)
+COPY swagger.yaml ./swagger.yaml
 
-# Exposer le port de l'application
 EXPOSE 3333
 
-# Commande par défaut
 CMD ["node", "build/bin/server.js"]
