@@ -125,45 +125,66 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
 }
 `
 
-    // Retry avec backoff exponentiel en cas d'erreur 503
+    // Retry with exponential backoff + jitter for transient errors (429, 503)
     let lastError: any
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    const maxAttempts = 5
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        console.log(`Génération avec Google AI pour: ${title} (tentative ${attempt}/3)`)
+        console.log(`Génération avec Google AI pour: ${title} (tentative ${attempt}/${maxAttempts})`)
         const result = await model.generateContent(prompt)
         const response = await result.response
         const text = response.text()
-        
+
         console.log('Réponse AI reçue:', text.substring(0, 200) + '...')
-        
+
         // Nettoyer la réponse pour extraire le JSON
         const jsonMatch = text.match(/\{[\s\S]*\}/)
         if (!jsonMatch) {
           console.error('Pas de JSON trouvé dans la réponse:', text)
           throw new Error('Format de réponse invalide')
         }
-        
+
         const parsed = JSON.parse(jsonMatch[0])
         console.log('JSON parsé avec succès')
         return parsed
-      } catch (error) {
+      } catch (error: any) {
         lastError = error
-        console.error(`Erreur génération AI (tentative ${attempt}/3):`, error.message)
-        
-        // Si c'est une erreur 503 (overloaded) et qu'il reste des tentatives, attendre et réessayer
-        if (error.status === 503 && attempt < 3) {
-          const waitTime = attempt * 2000 // 2s, 4s
-          console.log(`⏳ Attente de ${waitTime}ms avant nouvelle tentative...`)
+        // try to detect HTTP status
+        const status = error?.status || error?.code || (error?.response && error.response.status) || null
+        console.error(`Erreur génération AI (tentative ${attempt}/${maxAttempts}):`, error?.message || error)
+
+        // If rate limited or service unavailable, compute wait time and retry
+        if ((status === 429 || status === 503) && attempt < maxAttempts) {
+          // Prefer Retry-After header if available
+          let waitTime = null
+          try {
+            const retryAfter = error?.response?.headers?.['retry-after'] || error?.headers?.['retry-after'] || null
+            if (retryAfter) {
+              const sec = parseInt(retryAfter, 10)
+              if (!Number.isNaN(sec)) waitTime = sec * 1000
+            }
+          } catch (e) {
+            // ignore
+          }
+
+          if (!waitTime) {
+            // exponential backoff base 1000ms with jitter
+            const base = 1000 * Math.pow(2, attempt - 1)
+            const jitter = Math.floor(Math.random() * 1000)
+            waitTime = base + jitter
+          }
+
+          console.log(`⏳ Attente de ${waitTime}ms avant nouvelle tentative (status=${status})...`)
           await new Promise(resolve => setTimeout(resolve, waitTime))
           continue
         }
-        
-        // Pour les autres erreurs ou dernière tentative, throw
+
+        // For other errors or if out of attempts, break and throw below
         break
       }
     }
-    
-    console.error('Erreur génération AI après 3 tentatives:', lastError)
-    throw new Error('Impossible de générer le plan de cours: ' + lastError.message)
+
+    console.error(`Erreur génération AI après ${maxAttempts} tentatives:`, lastError)
+    throw new Error('Impossible de générer le plan de cours: ' + (lastError?.message || lastError))
   }
 }
