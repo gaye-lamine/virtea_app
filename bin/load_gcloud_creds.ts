@@ -46,6 +46,19 @@ try {
         fs.writeFileSync(out, JSON.stringify(parsed, null, 2), { mode: 0o600 })
         process.env.GOOGLE_APPLICATION_CREDENTIALS = out
         console.log('Google credentials file written to', out)
+        // Additional debug info
+        if (base64) {
+          console.log('GOOGLE_CLOUD_CREDENTIALS_BASE64 was used')
+        } else if (inline) {
+          // detect if inline looked like base64
+          const maybe = inline.trim()
+          const base64Regex = /^[A-Za-z0-9+/=\r\n]+$/
+          if (maybe.length > 200 && base64Regex.test(maybe)) {
+            console.log('GOOGLE_CLOUD_CREDENTIALS contained base64-like payload and was decoded')
+          } else {
+            console.log('GOOGLE_CLOUD_CREDENTIALS contained inline JSON')
+          }
+        }
       } catch (err) {
         console.error('Failed to parse/write Google credentials JSON:', err.message)
       }

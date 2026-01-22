@@ -13,10 +13,43 @@ export class TTSService {
   private client: TextToSpeechClient
 
   constructor() {
-    this.client = new TextToSpeechClient({
-      projectId: env.get('GOOGLE_CLOUD_PROJECT_ID'),
-      credentials: JSON.parse(env.get('GOOGLE_CLOUD_CREDENTIALS'))
-    })
+    // Support multiple ways of providing credentials in prod:
+    // - GOOGLE_CLOUD_CREDENTIALS as JSON
+    // - GOOGLE_CLOUD_CREDENTIALS as base64-encoded JSON
+    // - GOOGLE_CLOUD_CREDENTIALS_BASE64 as base64-encoded JSON
+    let credentialsObj: any = undefined
+    try {
+      const raw = env.get('GOOGLE_CLOUD_CREDENTIALS')
+      try {
+        credentialsObj = JSON.parse(raw)
+      } catch (err) {
+        // maybe base64 encoded in the same var
+        try {
+          const decoded = Buffer.from(raw, 'base64').toString('utf8')
+          credentialsObj = JSON.parse(decoded)
+        } catch (err2) {
+          // ignore, we'll try GOOGLE_CLOUD_CREDENTIALS_BASE64 next
+        }
+      }
+    } catch (err) {
+      // env.get may throw if not present; ignore and try base64 var
+    }
+
+    if (!credentialsObj && process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64) {
+      try {
+        const decoded = Buffer.from(process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64, 'base64').toString('utf8')
+        credentialsObj = JSON.parse(decoded)
+      } catch (err) {
+        console.error('Failed to parse GOOGLE_CLOUD_CREDENTIALS_BASE64:', err.message)
+      }
+    }
+
+    const clientConfig: any = {}
+    const projectId = env.get('GOOGLE_CLOUD_PROJECT_ID')
+    if (projectId) clientConfig.projectId = projectId
+    if (credentialsObj) clientConfig.credentials = credentialsObj
+
+    this.client = new TextToSpeechClient(clientConfig)
 
     // Configuration Cloudinary
     cloudinary.config({
