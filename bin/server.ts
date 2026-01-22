@@ -10,6 +10,7 @@
 */
 
 import 'reflect-metadata'
+import './load_gcloud_creds.js'
 import { Ignitor, prettyPrintError } from '@adonisjs/core'
 
 /**
