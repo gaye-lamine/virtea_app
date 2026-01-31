@@ -73,7 +73,6 @@ export class TTSService {
         voice: {
           languageCode,
           name: voiceName
-          // ssmlGender is inferred from the voice name
         },
         audioConfig: {
           audioEncoding: audioEncoding as any
