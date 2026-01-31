@@ -63,7 +63,7 @@ export class TTSService {
     const {
       text,
       languageCode = 'fr-FR',
-      voiceName = 'fr-FR-Neural2-A',
+      voiceName = 'fr-FR-Chirp3-HD-Fenrir',
       audioEncoding = 'MP3'
     } = options
 
@@ -72,8 +72,8 @@ export class TTSService {
         input: { text },
         voice: {
           languageCode,
-          name: voiceName,
-          ssmlGender: 'FEMALE' as const
+          name: voiceName
+          // ssmlGender is inferred from the voice name
         },
         audioConfig: {
           audioEncoding: audioEncoding as any
