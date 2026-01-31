@@ -120,18 +120,53 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
         let cleanText = text.trim()
 
         // Supprimer balises markdown de début (```json, ```JSON, ```, etc)
-        // On remplace tout ce qui ressemble à ```quelquechose par vide
         cleanText = cleanText.replace(/^```[a-zA-Z]*\s*/, '')
 
         // Supprimer balises markdown de fin (```)
         cleanText = cleanText.replace(/```$/, '')
 
-        // Trouver le premier { et le dernier }
+        // Algorithme de recherche du premier objet JSON complet par équilibrage des accolades
         const firstOpen = cleanText.indexOf('{')
-        const lastClose = cleanText.lastIndexOf('}')
 
-        if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
-          cleanText = cleanText.substring(firstOpen, lastClose + 1)
+        if (firstOpen !== -1) {
+          let balance = 0
+          let inString = false
+          let escape = false
+          let endIndex = -1
+
+          for (let i = firstOpen; i < cleanText.length; i++) {
+            const char = cleanText[i]
+
+            if (inString) {
+              if (escape) {
+                escape = false
+              } else if (char === '\\') {
+                escape = true
+              } else if (char === '"') {
+                inString = false
+              }
+            } else {
+              if (char === '"') {
+                inString = true
+              } else if (char === '{') {
+                balance++
+              } else if (char === '}') {
+                balance--
+                if (balance === 0) {
+                  endIndex = i
+                  break
+                }
+              }
+            }
+          }
+
+          if (endIndex !== -1) {
+            cleanText = cleanText.substring(firstOpen, endIndex + 1)
+          } else {
+            // Fallback si pas équilibré (ex: coupé)
+            console.warn('JSON non équilibré détecté, tentative avec le reste du texte')
+            cleanText = cleanText.substring(firstOpen)
+          }
         } else {
           console.error('Pas de JSON valide trouvé dans:', text)
           throw new Error('Format de réponse invalide (pas de JSON détecté)')
