@@ -117,13 +117,25 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
         console.log('Réponse AI reçue:', text.substring(0, 200) + '...')
 
         // Nettoyer la réponse pour extraire le JSON
-        const jsonMatch = text.match(/\{[\s\S]*\}/)
-        if (!jsonMatch) {
-          console.error('Pas de JSON trouvé dans la réponse:', text)
+        let cleanText = text.trim()
+
+        // Supprimer les balises markdown ```json et ```
+        if (cleanText.includes('```')) {
+          cleanText = cleanText.replace(/```json/g, '').replace(/```/g, '')
+        }
+
+        // Trouver le premier { et le dernier }
+        const firstOpen = cleanText.indexOf('{')
+        const lastClose = cleanText.lastIndexOf('}')
+
+        if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
+          cleanText = cleanText.substring(firstOpen, lastClose + 1)
+        } else {
+          console.error('Pas de JSON valide trouvé dans:', text)
           throw new Error('Format de réponse invalide')
         }
 
-        const parsed = JSON.parse(jsonMatch[0])
+        const parsed = JSON.parse(cleanText)
         console.log('JSON parsé avec succès')
         return parsed
       } catch (error: any) {
