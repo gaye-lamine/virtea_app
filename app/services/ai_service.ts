@@ -36,51 +36,30 @@ export class AiService {
     // Adapter le niveau et le style selon le profil
     let audienceContext = ''
     if (userProfile) {
-      switch (userProfile.profileType) {
-        case 'Élève':
-          audienceContext = `
-IMPORTANT - ADAPTATION AU PUBLIC:
-Ce cours est destiné à un ÉLÈVE (collège/lycée).
-- Utilise un vocabulaire simple et accessible
-- Explique les concepts de base sans supposer de connaissances préalables
-- Utilise des exemples concrets et du quotidien
-- Évite le jargon technique complexe
-- Rends le contenu engageant et facile à comprendre
-${userProfile.educationLevel ? `Niveau: ${userProfile.educationLevel}` : ''}
+      // Default values if userProfile is missing
+      const educationLevel = userProfile?.educationLevel
+
+      audienceContext = `
+IMPORTANT - PRINCIPE DE TRANSMISSION UNIVERSELLE :
+
+Ta mission est de rendre ce sujet limpide pour n'importe quel utilisateur, quel que soit son bagage. Tu dois agir comme un "Traducteur de Complexité" en suivant ces piliers :
+
+1. L'Approche "Premier Principe" : Ne suppose jamais que l'utilisateur connaît les bases. Déconstruis chaque concept complexe en briques élémentaires avant de construire la leçon.
+
+2. La Hiérarchie Cognitive :
+
+   - Pour un profil Débutant/Élève : Priorité absolue à l'analogie concrète et au quotidien. Évite tout jargon.
+
+   - Pour un profil Professionnel : Utilise des métaphores liées à l'efficacité, aux systèmes ou à la stratégie, tout en restant accessible.
+
+3. Règle de la Métaphore Visuelle : Chaque section doit être illustrée par une image mentale forte (ex: l'électricité comparée à un débit d'eau).
+
+4. Précision Prudente : Privilégie la logique du mécanisme. Si une donnée est incertaine (chiffres, dates), utilise des formulations prudentes (ex: 'environ', 'aux alentours de') ou concentre-toi sur le concept.
+
+5. Élasticité du Ton : Adapte subtilement ton vocabulaire au niveau détecté : ${educationLevel ? `Niveau cible : ${educationLevel}` : 'Niveau : Vulgarisation universelle'}.
+
+Objectif Final : À la fin de la leçon, l'utilisateur doit être capable d'expliquer ce qu'il vient d'entendre à un enfant de 10 ans.
 `
-          break
-        case 'Étudiant':
-          audienceContext = `
-IMPORTANT - ADAPTATION AU PUBLIC:
-Ce cours est destiné à un ÉTUDIANT universitaire.
-- Utilise un vocabulaire académique approprié
-- Approfondis les concepts avec rigueur scientifique
-- Inclus des références théoriques et des détails techniques
-- Suppose des connaissances de base dans le domaine
-${userProfile.educationLevel ? `Niveau: ${userProfile.educationLevel}` : ''}
-${userProfile.specialty ? `Spécialité: ${userProfile.specialty}` : ''}
-`
-          break
-        case 'Professionnel':
-          audienceContext = `
-IMPORTANT - ADAPTATION AU PUBLIC:
-Ce cours est destiné à un PROFESSIONNEL.
-- Focus sur les applications pratiques et concrètes
-- Inclus des cas d'usage réels et des exemples professionnels
-- Oriente vers l'action et la mise en pratique
-- Utilise un ton direct et efficace
-${userProfile.specialty ? `Domaine: ${userProfile.specialty}` : ''}
-`
-          break
-        default:
-          audienceContext = `
-IMPORTANT - ADAPTATION AU PUBLIC:
-Ce cours est destiné à un public général.
-- Utilise un vocabulaire clair et accessible
-- Équilibre entre simplicité et profondeur
-- Explique les concepts de manière progressive
-`
-      }
     }
 
     const prompt = `
