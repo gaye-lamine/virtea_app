@@ -119,10 +119,12 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
         // Nettoyer la réponse pour extraire le JSON
         let cleanText = text.trim()
 
-        // Supprimer les balises markdown ```json et ```
-        if (cleanText.includes('```')) {
-          cleanText = cleanText.replace(/```json/g, '').replace(/```/g, '')
-        }
+        // Supprimer balises markdown de début (```json, ```JSON, ```, etc)
+        // On remplace tout ce qui ressemble à ```quelquechose par vide
+        cleanText = cleanText.replace(/^```[a-zA-Z]*\s*/, '')
+
+        // Supprimer balises markdown de fin (```)
+        cleanText = cleanText.replace(/```$/, '')
 
         // Trouver le premier { et le dernier }
         const firstOpen = cleanText.indexOf('{')
@@ -132,7 +134,7 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
           cleanText = cleanText.substring(firstOpen, lastClose + 1)
         } else {
           console.error('Pas de JSON valide trouvé dans:', text)
-          throw new Error('Format de réponse invalide')
+          throw new Error('Format de réponse invalide (pas de JSON détecté)')
         }
 
         const parsed = JSON.parse(cleanText)
@@ -144,8 +146,11 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
         const status = error?.status || error?.code || (error?.response && error.response.status) || null
         console.error(`Erreur génération AI (tentative ${attempt}/${maxAttempts}):`, error?.message || error)
 
-        // If rate limited or service unavailable, compute wait time and retry
-        if ((status === 429 || status === 503) && attempt < maxAttempts) {
+        // Retry on Rate Limit (429), Service Unavailable (503), OR JSON Syntax Error
+        const isTransient = status === 429 || status === 503
+        const isJsonError = error instanceof SyntaxError || error.message.includes('JSON') || error.message.includes('Format de réponse invalide')
+
+        if ((isTransient || isJsonError) && attempt < maxAttempts) {
           // Prefer Retry-After header if available
           let waitTime = null
           try {
@@ -165,7 +170,7 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
             waitTime = base + jitter
           }
 
-          console.log(`⏳ Attente de ${waitTime}ms avant nouvelle tentative (status=${status})...`)
+          console.log(`⏳ Attente de ${waitTime}ms avant nouvelle tentative (cause: ${isTransient ? 'API' : 'JSON'})...`)
           await new Promise(resolve => setTimeout(resolve, waitTime))
           continue
         }
