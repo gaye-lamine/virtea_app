@@ -7,12 +7,14 @@ export default class Lesson extends BaseModel {
 
   @column()
   declare title: string
+  @column()
+  declare deviceId: string
 
   @column()
   declare description: string
 
   @column()
-  declare plan: string 
+  declare plan: string
 
   @column()
   declare content: string

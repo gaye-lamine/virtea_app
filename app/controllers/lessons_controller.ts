@@ -11,12 +11,13 @@ export default class LessonsController {
   async create({ request, response }: HttpContext) {
     try {
       const payload = await request.validateUsing(createLessonValidator)
-      
+
       const deviceId = request.header('X-Device-Id') || request.input('deviceId')
-      
+
       const lesson = await Lesson.create({
         title: payload.title,
-        status: 'processing'
+        status: 'processing',
+        deviceId: deviceId
       })
 
       let userProfile: { profileType: string; educationLevel?: string; specialty?: string } | undefined
@@ -39,11 +40,11 @@ export default class LessonsController {
       }
 
       const generatorService = new LessonGeneratorService()
-      
+
       generatorService.generateLesson(lesson.id, lesson.title, userProfile).catch(error => {
         console.error('Erreur génération leçon:', error)
       })
-      
+
       return response.status(201).json({
         success: true,
         data: lesson,
@@ -64,7 +65,7 @@ export default class LessonsController {
   async show({ params, response }: HttpContext) {
     try {
       const lesson = await Lesson.findOrFail(params.id)
-      
+
       return response.json({
         success: true,
         data: lesson
@@ -80,10 +81,18 @@ export default class LessonsController {
   /**
    * Lister toutes les leçons
    */
-  async index({ response }: HttpContext) {
+  async index({ request, response }: HttpContext) {
     try {
-      const lessons = await Lesson.all()
-      
+      const deviceId = request.header('X-Device-Id') || request.input('deviceId')
+
+      const query = Lesson.query()
+
+      if (deviceId) {
+        query.where('device_id', deviceId)
+      }
+
+      const lessons = await query.exec()
+
       return response.json({
         success: true,
         data: lessons
@@ -102,7 +111,7 @@ export default class LessonsController {
   async createTest({ request, response }: HttpContext) {
     try {
       const payload = await request.validateUsing(createLessonValidator)
-      
+
       const testContent = {
         title: payload.title,
         description: `Cours complet sur ${payload.title}`,
@@ -125,13 +134,14 @@ export default class LessonsController {
         ],
         conclusion: "En conclusion, nous avons appris..."
       }
-      
+
       const lesson = await Lesson.create({
         title: payload.title,
         description: testContent.description,
         plan: JSON.stringify({ sections: testContent.sections.map(s => ({ title: s.title })) }),
         content: JSON.stringify(testContent),
-        status: 'ready'
+        status: 'ready',
+        deviceId: request.header('X-Device-Id') || request.input('deviceId')
       })
 
       return response.status(201).json({
