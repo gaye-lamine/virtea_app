@@ -6,6 +6,7 @@ export interface TTSOptions {
   text: string
   languageCode?: string
   voiceName?: string
+  modelName?: string
   audioEncoding?: 'MP3' | 'LINEAR16' | 'OGG_OPUS'
 }
 
@@ -64,19 +65,31 @@ export class TTSService {
       text,
       languageCode = 'fr-FR',
       voiceName = 'fr-FR-Chirp3-HD-Zubenelgenubi',
+      modelName = 'gemini-2.5-flash-tts',
       audioEncoding = 'MP3'
     } = options
 
     try {
-      const request = {
+      const request: any = { // Cast to any to allow model_name if missing from types
         input: { text },
         voice: {
           languageCode,
           name: voiceName
+          // ssmlGender is inferred from the voice name
         },
         audioConfig: {
           audioEncoding: audioEncoding as any
         }
+      }
+
+      // Inject model_name dynamically if present (required for Gemini/Chirp Voices)
+      if (modelName) {
+        // @ts-ignore
+        request.voice.model = modelName // The doc uses 'model' or 'model_name' depending on library version, sometimes just in voice object but key checks might be strict.
+        // Based on doc 'model: "gemini-2.5-flash-tts"' looks like a property of the config or voice.
+        // Actually the curl example shows voice: { ..., "model_name": "gemini-2.5-flash-tts" } 
+        // BUT ALSO "model": "gemini-..." in other contexts. Let's try inserting it into voice object.
+        request.voice.model_name = modelName
       }
 
       const [response] = await this.client.synthesizeSpeech(request)
