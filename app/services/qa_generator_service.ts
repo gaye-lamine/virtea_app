@@ -25,8 +25,8 @@ export class QAGeneratorService {
   }
 
   async generateQASession(
-    lessonId: number, 
-    title: string, 
+    lessonId: number,
+    title: string,
     content: any,
     userProfile?: {
       profileType: string
@@ -36,7 +36,7 @@ export class QAGeneratorService {
   ): Promise<QASession> {
     try {
       console.log(`Génération Q&A pour la leçon: ${title}`)
-      
+
       // Adapter le niveau selon le profil
       let audienceContext = ''
       if (userProfile) {
@@ -125,18 +125,18 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
       const result = await this.aiService.getGeminiModel().generateContent(prompt)
       const response = await result.response
       const text = response.text()
-      
+
       console.log('Réponse AI Q&A reçue:', text.substring(0, 200) + '...')
-      
+
       // Nettoyer la réponse pour extraire le JSON
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) {
         console.error('Pas de JSON trouvé dans la réponse Q&A:', text)
         throw new Error('Format de réponse invalide')
       }
-      
+
       const parsed = JSON.parse(jsonMatch[0])
-      
+
       const qaSession: QASession = {
         id: Date.now(),
         lessonId,
@@ -151,10 +151,10 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
         })),
         createdAt: new Date()
       }
-      
+
       console.log(`Q&A générée avec succès: ${qaSession.items.length} questions`)
       return qaSession
-      
+
     } catch (error) {
       console.error('Erreur génération Q&A:', error)
       throw new Error('Impossible de générer la session Q&A: ' + error.message)
@@ -162,7 +162,7 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
   }
 
   async answerCustomQuestion(
-    lessonId: number,
+    _lessonId: number,
     question: string,
     lessonContent: any,
     userProfile?: {
@@ -173,7 +173,7 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
   ): Promise<string> {
     try {
       console.log(`Réponse à la question: ${question}`)
-      
+
       // Adapter le niveau selon le profil
       let audienceContext = ''
       if (userProfile) {
@@ -214,10 +214,10 @@ Réponds directement sans formatage JSON, juste le texte de la réponse.
       const result = await this.aiService.getGeminiModel().generateContent(prompt)
       const response = await result.response
       const answer = response.text().trim()
-      
+
       console.log('Réponse personnalisée générée:', answer.substring(0, 100) + '...')
       return answer
-      
+
     } catch (error) {
       console.error('Erreur réponse personnalisée:', error)
       return 'Je ne peux pas répondre à cette question pour le moment. Veuillez consulter le contenu de la leçon ou reformuler votre question.'

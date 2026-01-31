@@ -43,8 +43,8 @@ export default class QAController {
       }
 
       const qaSession = await this.qaService.generateQASession(
-        parseInt(lessonId), 
-        title, 
+        parseInt(lessonId),
+        title,
         content,
         userProfile
       )
@@ -81,11 +81,11 @@ export default class QAController {
 
       const lesson = await Lesson.findOrFail(lessonId)
       let lessonContent = null
-      
+
       if (lesson.content) {
         try {
-          lessonContent = typeof lesson.content === 'string' 
-            ? JSON.parse(lesson.content) 
+          lessonContent = typeof lesson.content === 'string'
+            ? JSON.parse(lesson.content)
             : lesson.content
         } catch (error) {
           console.error('Erreur parsing contenu leçon:', error)
@@ -144,10 +144,10 @@ export default class QAController {
   /**
    * Récupérer les sessions Q&A sauvegardées (dinako deff apres )
    */
-  async sessions({ request, response }: HttpContext) {
+  async sessions({ response }: HttpContext) {
     try {
-      const deviceId = request.header('X-Device-Id')
-      
+      // const deviceId = request.header('X-Device-Id')
+
       // Pour l'instant, retourner une liste vide
       // TODO: Implémenter la sauvegarde des sessions Q&A en base
       return response.json({

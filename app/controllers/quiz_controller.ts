@@ -42,8 +42,8 @@ export default class QuizController {
       }
 
       const quiz = await this.quizService.generateQuiz(
-        parseInt(lessonId), 
-        title, 
+        parseInt(lessonId),
+        title,
         content,
         userProfile
       )
@@ -66,10 +66,10 @@ export default class QuizController {
   /**
    * Récupérer les quiz sauvegardés (dinako deff apres)
    */
-  async index({ request, response }: HttpContext) {
+  async index({ response }: HttpContext) {
     try {
-      const deviceId = request.header('X-Device-Id')
-      
+      // const deviceId = request.header('X-Device-Id')
+
       // Pour l'instant, retourner une liste vide
       // TODO: Implémenter la sauvegarde des quiz en base
       return response.json({
