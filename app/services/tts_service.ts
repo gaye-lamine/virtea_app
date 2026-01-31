@@ -63,7 +63,7 @@ export class TTSService {
     const {
       text,
       languageCode = 'fr-FR',
-      voiceName = 'fr-FR-Chirp3-HD-Fenrir',
+      voiceName = 'fr-FR-Chirp3-HD-Zubenelgenubi',
       audioEncoding = 'MP3'
     } = options
 
