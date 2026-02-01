@@ -60,6 +60,24 @@ export class TTSService {
     })
   }
 
+  /**
+   * Normalise le texte pour améliorer la synthèse vocale
+   * - Remplace les apostrophes typographiques par des apostrophes droites
+   * - Nettoie les caractères problématiques
+   */
+  private normalizeTextForTTS(text: string): string {
+    return text
+      // Remplacer les apostrophes typographiques par des apostrophes droites
+      .replace(/['']/g, "'")
+      // Remplacer les guillemets typographiques par des guillemets droits
+      .replace(/[""]/g, '"')
+      // Normaliser les espaces multiples
+      .replace(/\s+/g, ' ')
+      // Supprimer les espaces avant la ponctuation
+      .replace(/\s+([.,!?;:])/g, '$1')
+      .trim()
+  }
+
   async generateAudio(options: TTSOptions): Promise<Buffer> {
     const {
       text,
@@ -70,8 +88,11 @@ export class TTSService {
     } = options
 
     try {
+      // Normaliser le texte avant la synthèse
+      const normalizedText = this.normalizeTextForTTS(text)
+
       const request: any = { // Cast to any to allow model_name if missing from types
-        input: { text },
+        input: { text: normalizedText },
         voice: {
           languageCode,
           name: voiceName
