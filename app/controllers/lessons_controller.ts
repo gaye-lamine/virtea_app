@@ -88,7 +88,7 @@ export default class LessonsController {
       const query = Lesson.query()
 
       if (deviceId) {
-        query.where('device_id', deviceId)
+        query.where('deviceId', deviceId)
       }
 
       const lessons = await query.exec()
