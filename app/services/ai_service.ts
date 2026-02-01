@@ -75,7 +75,18 @@ Le cours doit être structuré comme suit:
   * Un titre clair
   * Un contenu explicatif détaillé (2-3 paragraphes)
   * Des mots-clés optimisés pour rechercher une image illustrative sur Wikipedia française
-- Une conclusion
+- Une conclusion pédagogique
+
+IMPORTANT pour la CONCLUSION:
+- NE récite PAS le plan de cours ou la structure
+- NE liste PAS les sections abordées
+- Rédige une conclusion NATURELLE et PÉDAGOGIQUE qui:
+  * Résume les 2-3 apprentissages clés en 2-3 phrases maximum
+  * Encourage l'apprenant avec un ton positif et motivant
+  * Ouvre sur une perspective ou application pratique
+- Exemple de BON format: "Nous avons découvert comment [concept clé] fonctionne grâce à [mécanisme]. Cette compréhension vous permettra de [application pratique]. Continuez à explorer ce sujet fascinant !"
+- Exemple de MAUVAIS format: "Dans ce cours, nous avons vu la section 1 sur..., puis la section 2 sur..., et enfin la section 3..."
+
 
 IMPORTANT pour les mots-clés d'images (imageQuery):
 - Utilise des termes simples et précis qui existent sur Wikipedia française
@@ -100,7 +111,7 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
       ]
     }
   ],
-  "conclusion": "Conclusion du cours"
+  "conclusion": "Conclusion pédagogique naturelle qui résume les apprentissages clés"
 }
 `
 
