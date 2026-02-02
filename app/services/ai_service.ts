@@ -11,6 +11,8 @@ export interface LessonPlan {
       content: string
       imageQuery: string
     }[]
+    id?: string
+    check_understanding?: boolean
   }[]
   conclusion: string
 }
@@ -75,6 +77,7 @@ Le cours doit être structuré comme suit:
   * Un titre clair
   * Un contenu explicatif détaillé (2-3 paragraphes)
   * Des mots-clés optimisés pour rechercher une image illustrative sur Wikipedia française
+- Chaque section peut avoir une pause de compréhension (check_understanding) si le concept est complexe
 - Une conclusion pédagogique
 
 IMPORTANT pour la CONCLUSION:
@@ -109,6 +112,12 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
           "imageQuery": "mot-clé simple pour Wikipedia"
         }
       ]
+      ]
+    },
+    {
+       "title": "Titre section complexe",
+       "check_understanding": true,
+       "subsections": [...]
     }
   ],
   "conclusion": "Conclusion pédagogique naturelle qui résume les apprentissages clés"

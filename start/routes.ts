@@ -42,6 +42,7 @@ router.group(() => {
   router.post('/lessons/test', '#controllers/lessons_controller.createTest')
   router.get('/lessons', '#controllers/lessons_controller.index')
   router.get('/lessons/:id', '#controllers/lessons_controller.show')
+  router.post('/lessons/:lesson_id/sections/:section_id/question', '#controllers/section_questions_controller.store')
 }).prefix('/api/v1')
 
 // Routes pour l'audio

@@ -1,4 +1,7 @@
 import { AiService } from './ai_service.js'
+import { TTSService } from './tts_service.js'
+import Lesson from '#models/lesson'
+
 
 export interface QAItem {
   id: number
@@ -19,9 +22,11 @@ export interface QASession {
 
 export class QAGeneratorService {
   private aiService: AiService
+  private ttsService: TTSService
 
   constructor() {
     this.aiService = new AiService()
+    this.ttsService = new TTSService()
   }
 
   async generateQASession(
@@ -221,6 +226,69 @@ Réponds directement sans formatage JSON, juste le texte de la réponse.
     } catch (error) {
       console.error('Erreur réponse personnalisée:', error)
       return 'Je ne peux pas répondre à cette question pour le moment. Veuillez consulter le contenu de la leçon ou reformuler votre question.'
+    }
+  }
+  async answerSectionQuestion(
+    lessonId: number,
+    sectionId: string,
+    question: string,
+    _userProfile?: any
+  ): Promise<{ answer_text: string, answer_audio_url: string }> {
+    try {
+      console.log(`Question sur section ${sectionId} leçon ${lessonId}: ${question}`)
+
+      const lesson = await Lesson.findOrFail(lessonId)
+      const content = typeof lesson.content === 'string' ? JSON.parse(lesson.content) : lesson.content
+
+      // Trouver la section
+      const section = content.sections.find((s: any) => s.id === sectionId)
+
+      if (!section) {
+        throw new Error('Section non trouvée')
+      }
+
+      // Contexte spécifique à la section
+      const sectionContext = JSON.stringify(section, null, 2)
+
+      // Prompt rassurant et contextuel
+      const prompt = `
+Tu es un tuteur pédagogue et bienveillant. Un élève n'a pas compris cette section de cours :
+
+SECTION :
+${sectionContext}
+
+IL POSE CETTE QUESTION : "${question}"
+
+Tes consignes :
+1. TON RASSURANT : Ne juge jamais. Commence par valider la question (ex: "C'est une excellente question", "Il est normal d'hésiter là-dessus").
+2. CONTEXTUALISÉE : Réponds UNIQUEMENT en te basant sur le contenu de cette section. N'introduis pas de notions futures ou hors sujet.
+3. COURTE : Ta réponse doit être lue à l'oral. Fais court (max 3-4 phrases, 30-50 mots).
+4. SIMPLE : Utilise des mots simples. Si la question est floue, reformule ce que tu as compris.
+
+Réponds uniquement avec le texte à oraliser.
+`
+
+      const result = await this.aiService.getGeminiModel().generateContent(prompt)
+      const answerText = (await result.response).text().trim()
+
+      // Générer audio
+      console.log('Génération audio pour réponse Q&A...')
+      const audioBuffer = await this.ttsService.generateAudio({
+        text: answerText,
+        voiceName: 'fr-FR-Neural2-A' // Voix douce pour les explications
+      })
+
+      const filename = `qa_${lessonId}_${sectionId}_${Date.now()}`
+      const audioUrl = await this.ttsService['saveAudioFile'](audioBuffer, filename)
+
+      return {
+        answer_text: answerText,
+        answer_audio_url: audioUrl
+      }
+
+    } catch (error) {
+      console.error('Erreur answerSectionQuestion:', error)
+      throw new Error('Impossible de répondre à la question : ' + error.message)
     }
   }
 }
