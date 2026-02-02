@@ -197,44 +197,51 @@ export class LessonGeneratorService {
       let optimizedIndex = 0
       const generatedLesson: GeneratedLesson = {
         ...lessonPlan,
-        sections: lessonPlan.sections.map((section, sectionIndex) => ({
-          ...section,
-          subsections: section.subsections.map((subsection, subsectionIndex) => {
-            // Préserver les images de la première section
-            if (sectionIndex === 0 && currentContent.sections && currentContent.sections[0]) {
-              const existingSubsection = currentContent.sections[0].subsections[subsectionIndex]
-              return {
-                ...subsection,
-                image: existingSubsection?.image || undefined
-              }
-            }
+        sections: lessonPlan.sections.map((section, sectionIndex) => {
+          // Récupérer l'ID existant
+          const existingSection = currentContent.sections?.[sectionIndex]
+          const sectionId = existingSection?.id || section.id || crypto.randomUUID()
 
-            // Ajouter les nouvelles images pour les autres sections
-            const imageIndex = remainingImageQueries.indexOf(subsection.imageQuery)
-            if (imageIndex >= 0) {
-              const originalImage = remainingImages[imageIndex]
-              let finalImage = originalImage
-
-              if (originalImage && optimizedImages[optimizedIndex]) {
-                finalImage = {
-                  ...originalImage,
-                  url: optimizedImages[optimizedIndex]?.url || originalImage.url
+          return {
+            ...section,
+            id: sectionId,
+            subsections: section.subsections.map((subsection, subsectionIndex) => {
+              // Préserver les images de la première section
+              if (sectionIndex === 0 && currentContent.sections && currentContent.sections[0]) {
+                const existingSubsection = currentContent.sections[0].subsections[subsectionIndex]
+                return {
+                  ...subsection,
+                  image: existingSubsection?.image || undefined
                 }
-                optimizedIndex++
+              }
+
+              // Ajouter les nouvelles images pour les autres sections
+              const imageIndex = remainingImageQueries.indexOf(subsection.imageQuery)
+              if (imageIndex >= 0) {
+                const originalImage = remainingImages[imageIndex]
+                let finalImage = originalImage
+
+                if (originalImage && optimizedImages[optimizedIndex]) {
+                  finalImage = {
+                    ...originalImage,
+                    url: optimizedImages[optimizedIndex]?.url || originalImage.url
+                  }
+                  optimizedIndex++
+                }
+
+                return {
+                  ...subsection,
+                  image: finalImage || undefined
+                }
               }
 
               return {
                 ...subsection,
-                image: finalImage || undefined
+                image: undefined
               }
-            }
-
-            return {
-              ...subsection,
-              image: undefined
-            }
-          })
-        }))
+            })
+          }
+        })
       }
 
       // 5. Générer les fichiers audio restants

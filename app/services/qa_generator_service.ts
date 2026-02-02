@@ -241,7 +241,16 @@ Réponds directement sans formatage JSON, juste le texte de la réponse.
       const content = typeof lesson.content === 'string' ? JSON.parse(lesson.content) : lesson.content
 
       // Trouver la section
-      const section = content.sections.find((s: any) => s.id === sectionId)
+      let section = content.sections.find((s: any) => s.id === sectionId)
+
+      // Fallback : si section non trouvée et ID numérique => chercher par index
+      if (!section && /^\d+$/.test(sectionId)) {
+        const index = parseInt(sectionId, 10)
+        if (index >= 0 && index < content.sections.length) {
+          section = content.sections[index]
+          console.log(`Section trouvée par index ${index} (ID fourni: ${sectionId})`)
+        }
+      }
 
       if (!section) {
         throw new Error('Section non trouvée')
