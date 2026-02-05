@@ -67,10 +67,11 @@ export class TTSService {
    */
   private normalizeTextForTTS(text: string): string {
     return text
-      // Remplacer les apostrophes droites par des apostrophes typographiques (meilleure prosodie)
-      .replace(/['']/g, "’")
+      // Utiliser l'apostrophe droite standard pour une meilleure compatibilité TTS
+      // (Les apostrophes typographiques ’ peuvent causer des pauses incorrectes genre "L... être")
+      .replace(/[‘’`]/g, "'")
       // Remplacer les guillemets typographiques par des guillemets droits
-      .replace(/[""]/g, '"')
+      .replace(/[“”«»]/g, '"')
       // Normaliser les espaces multiples
       .replace(/\s+/g, ' ')
       // Supprimer les espaces avant la ponctuation
