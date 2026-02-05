@@ -142,29 +142,47 @@ Génère le plan selon l'arborescence suivante :
           throw new Error('Format de réponse invalide (pas de JSON détecté)')
         }
 
-        const parsed: LessonPlan = JSON.parse(cleanText)
+        let parsed: any = JSON.parse(cleanText)
+
+        // Tentative de récupération si le JSON est imbriqué (ex: { "plan_de_cours": { ... } })
+        if (!parsed.sections && parsed.plan_de_cours) {
+          console.log('⚠️ Structure imbriquée détectée (plan_de_cours), tentative de récupération...')
+          parsed = parsed.plan_de_cours
+        } else if (!parsed.sections && parsed.course_plan) {
+          console.log('⚠️ Structure imbriquée détectée (course_plan), tentative de récupération...')
+          parsed = parsed.course_plan
+        }
+
+        // Tentative de mapping si les clés sont en français
+        if (!parsed.sections && parsed.grandes_parties) {
+          console.log('⚠️ Structure avec clés françaises détectée, tentative de mapping...')
+          parsed.sections = parsed.grandes_parties.map((partie: any) => ({
+            title: partie.titre || partie.titre_partie,
+            subsections: (partie.sous_parties || []).map((sous: any) => ({
+              title: sous.titre || sous.titre_sous_partie,
+              content: sous.contenu || sous.description,
+              imageQuery: sous.mots_cles_image || sous.imageQuery
+            }))
+          }))
+        }
 
         // Validation de la structure
         if (!parsed.sections || !Array.isArray(parsed.sections)) {
-          console.warn('⚠️ JSON invalide reçu (pas de sections):', cleanText.substring(0, 200) + '...')
+          console.warn('⚠️ JSON invalide reçu (toujours pas de sections):', JSON.stringify(parsed).substring(0, 200) + '...')
           throw new Error('Format de réponse invalide: "sections" manquant ou incorrect')
         }
-
-        // Validation et correction des imageQuery manquantes
-        if (parsed.sections) {
-          parsed.sections.forEach(section => {
-            if (section.subsections) {
-              section.subsections.forEach(subsection => {
-                if (!subsection.imageQuery || subsection.imageQuery.trim() === '' || subsection.imageQuery === 'undefined') {
-                  console.warn(`⚠️ imageQuery manquant pour "${subsection.title}", utilisation du titre comme fallback`)
-                  // Utiliser le titre de la sous-partie ou de la section comme fallback
-                  // Retirer les mots trop communs pour une recherche Wikipedia plus efficace
-                  subsection.imageQuery = subsection.title || section.title
-                }
-              })
-            }
-          })
-        }
+        parsed.sections.forEach((section: any) => {
+          if (section.subsections) {
+            section.subsections.forEach((subsection: any) => {
+              if (!subsection.imageQuery || subsection.imageQuery.trim() === '' || subsection.imageQuery === 'undefined') {
+                console.warn(`⚠️ imageQuery manquant pour "${subsection.title}", utilisation du titre comme fallback`)
+                // Utiliser le titre de la sous-partie ou de la section comme fallback
+                // Retirer les mots trop communs pour une recherche Wikipedia plus efficace
+                subsection.imageQuery = subsection.title || section.title
+              }
+            })
+          }
+        })
 
         console.log('JSON parsé et validé avec succès')
         return parsed
@@ -208,7 +226,7 @@ Génère le plan selon l'arborescence suivante :
       }
     }
 
-    console.error(`Erreur génération AI après ${maxAttempts} tentatives:`, lastError)
+    console.error(`Erreur génération AI après ${maxAttempts} tentatives: `, lastError)
     throw new Error('Impossible de générer le plan de cours: ' + (lastError?.message || lastError))
   }
 }
