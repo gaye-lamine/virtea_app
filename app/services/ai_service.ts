@@ -160,7 +160,7 @@ Génère le plan selon l'arborescence suivante :
             console.log('Clés trouvées dans la première partie:', Object.keys(parsed.grandes_parties[0]))
           }
           parsed.sections = parsed.grandes_parties.map((partie: any) => ({
-            title: partie.titre || partie.titre_partie || partie.nom || 'Titre manquant',
+            title: partie.titre || partie.titre_partie || partie.titre_officiel || partie.nom || 'Titre manquant',
             subsections: (partie.sous_parties || []).map((sous: any) => ({
               title: sous.titre || sous.titre_sous_partie || sous.nom || 'Sous-titre manquant',
               content: sous.contenu || sous.description || sous.texte || '',
