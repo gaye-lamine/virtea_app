@@ -151,20 +151,31 @@ Génère le plan selon l'arborescence suivante :
         } else if (!parsed.sections && parsed.course_plan) {
           console.log('⚠️ Structure imbriquée détectée (course_plan), tentative de récupération...')
           parsed = parsed.course_plan
+        } else if (!parsed.sections && parsed['Plan de Cours']) {
+          console.log('⚠️ Structure imbriquée détectée (Plan de Cours), tentative de récupération...')
+          parsed = parsed['Plan de Cours']
+        } else if (!parsed.sections && parsed.PlanDeCours) {
+          console.log('⚠️ Structure imbriquée détectée (PlanDeCours), tentative de récupération...')
+          parsed = parsed.PlanDeCours
         }
 
-        // Tentative de mapping si les clés sont en français
-        if (!parsed.sections && parsed.grandes_parties) {
-          console.log('⚠️ Structure avec clés françaises détectée, tentative de mapping...')
-          if (parsed.grandes_parties.length > 0) {
-            console.log('Clés trouvées dans la première partie:', Object.keys(parsed.grandes_parties[0]))
+
+
+        // Normalisation des clés racines possibles pour les grandes parties
+        const grandesParties = parsed.grandes_parties || parsed['Grandes Parties'] || parsed.GrandesParties || parsed.sections
+
+        // Tentative de mapping si les clés sont en français ou structure alternative
+        if (!parsed.sections && grandesParties) {
+          console.log('⚠️ Structure avec clés françaises/alternatives détectée, tentative de mapping...')
+          if (grandesParties.length > 0) {
+            console.log('Clés trouvées dans la première partie:', Object.keys(grandesParties[0]))
           }
-          parsed.title = parsed.titre_lecon_officiel || parsed.TitreLeconOfficiel || parsed.titre || parsed.title || 'Titre de la leçon'
+          parsed.title = parsed.titre_lecon_officiel || parsed.TitreLeconOfficiel || parsed['Titre de la Leçon'] || parsed.titre || parsed.title || 'Titre de la leçon'
           parsed.description = parsed.description || parsed.Introduction || parsed.introduction || `Leçon sur ${parsed.title}`
 
-          parsed.sections = parsed.grandes_parties.map((partie: any) => ({
+          parsed.sections = grandesParties.map((partie: any) => ({
             title: partie.titre || partie.titre_partie || partie.titre_officiel || partie.nom || 'Titre manquant',
-            subsections: (partie.sous_parties || []).map((sous: any) => ({
+            subsections: (partie.sous_parties || partie['Sous-parties'] || partie.SousParties || []).map((sous: any) => ({
               title: sous.titre || sous.titre_sous_partie || sous.nom || 'Sous-titre manquant',
               content: sous.contenu || sous.description || sous.texte || '',
               imageQuery: sous.mots_cles_image || sous.imageQuery || sous.titre || 'image'
