@@ -1,3 +1,4 @@
+
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import env from '#start/env'
 
@@ -64,12 +65,38 @@ Agis en tant qu'expert en ingénierie pédagogique et spécialiste des systèmes
 4. STRUCTURE PÉDAGOGIQUE DU PLAN
 Génère le plan selon l'arborescence suivante :
 • Introduction de la leçon.
-• Grandes Parties (titres officiels).
-• Sous-parties pour chaque Grande Partie (détails des leçons).
+• Sections (Grandes Parties - titres officiels).
+• Sous-sections pour chaque Section (détails des leçons).
 • Conclusion de la leçon.
 
-5. FORMAT DE SORTIE ET CONTRAINTES
-• Réponds exclusivement en suivant la structure JSON de référence fournie.
+5. RÉDACTION DU CONTENU (CRUCIAL)
+• Pour chaque sous-section, tu DOIS rédiger un CONTENU PÉDAGOGIQUE DÉTAILLÉ (champ "content").
+• Ce contenu doit être un véritable cours complet, explicatif et structuré, prêt à être lu par l'élève.
+• NE JAMAIS METTRE de "contenu en cours de rédaction" ou de phrases vides.
+
+6. FORMAT DE SORTIE (STRICT JSON)
+• Réponds EXCLUSIVEMENT avec un objet JSON valide respectant scrupuleusement ce schéma :
+
+\`\`\`json
+{
+  "title": "Titre officiel de la leçon",
+  "description": "Introduction et objectifs de la leçon",
+  "sections": [
+    {
+      "title": "Titre de la Grande Partie 1",
+      "subsections": [
+        {
+          "title": "Titre de la sous-partie 1.1",
+          "content": "Texte complet et détaillé du cours pour cette sous-partie. Il doit être riche, explicatif et pédagogique.",
+          "imageQuery": "Terme de recherche pour une image illustrative"
+        }
+      ]
+    }
+  ],
+  "conclusion": "Résumé et ouverture"
+}
+\`\`\`
+
 • Interdiction formelle : Ne pas inventer de chapitres hors programme.
 • Le titre final de la leçon dans le JSON doit être l'intitulé académique officiel trouvé lors de la recherche.
 `
