@@ -25,53 +25,84 @@ export class AiService {
   }
 
   getGeminiModel() {
-    return this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    return this.genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      tools: [{ googleSearch: {} } as any],
+    })
   }
 
   async generateLessonPlan(title: string, userProfile?: {
     profileType: string
     educationLevel?: string
     specialty?: string
+    country?: string
+    institutionName?: string
+    series?: string
+    studyYear?: string
   }): Promise<LessonPlan> {
     const model = this.getGeminiModel()
 
     // Adapter le niveau et le style selon le profil
     let audienceContext = ''
-    if (userProfile) {
-      // Default values if userProfile is missing
-      const educationLevel = userProfile?.educationLevel
+    let searchContext = ''
 
+    if (userProfile) {
+      const { profileType, educationLevel, specialty, country, institutionName, series, studyYear } = userProfile
+
+      // 1. Contexte de Recherche (Grounding)
+      if (country) {
+        if (profileType === 'student') {
+          // Contexte Étudiant (Université/Grande École)
+          const univContext = institutionName ? `de l'université/école "${institutionName}"` : ''
+          const filiereContext = specialty ? `en filière "${specialty}"` : ''
+          const anneeContext = studyYear ? `niveau "${studyYear}"` : ''
+
+          searchContext = `
+CONTEXTE ACADÉMIQUE SPÉCIFIQUE :
+L'apprenant est un étudiant ${univContext} ${filiereContext} ${anneeContext} au ${country}.
+TÂCHE DE RECHERCHE OBLIGATOIRE :
+Utilise Google Search pour trouver le programme officiel ou le syllabus standard pour le cours "${title}" correspondant exactement à ce niveau universitaire et cette filière au ${country}.
+Base la structure du cours sur ce programme officiel.
+`
+        } else {
+          // Contexte Élève (Lycée/Collège)
+          const niveauContext = educationLevel ? `niveau "${educationLevel}"` : ''
+          const serieContext = series ? `série/filière "${series}"` : ''
+
+          searchContext = `
+CONTEXTE SCOLAIRE SPÉCIFIQUE :
+L'apprenant est un élève ${niveauContext} ${serieContext} au ${country}.
+TÂCHE DE RECHERCHE OBLIGATOIRE :
+Utilise Google Search pour trouver le programme scolaire officiel national du ${country} pour la matière concernée par "${title}" à ce niveau spécifique (${educationLevel} ${series}).
+Le plan de cours DOIT correspondre strictement aux chapitres/compétences exigés par le ministère de l'éducation du ${country} pour cette classe.
+`
+        }
+      }
+
+      // 2. Contexte Pédagogique (Ton et Approche)
       audienceContext = `
 IMPORTANT - PRINCIPE DE TRANSMISSION UNIVERSELLE :
+Tu dois agir comme un "Traducteur de Complexité".
 
-Ta mission est de rendre ce sujet limpide pour n'importe quel utilisateur, quel que soit son bagage. Tu dois agir comme un "Traducteur de Complexité" en suivant ces piliers :
+1. La Hiérarchie Cognitive :
+   ${profileType === 'pupil' ? '- Profil Élève : Priorité à l\'analogie concrète, aux exemples du quotidien et à la préparation aux examens officiels.' : '- Profil Étudiant : Rigueur académique, terminologie précise de la filière, mais explications claires.'}
 
-1. L'Approche "Premier Principe" : Ne suppose jamais que l'utilisateur connaît les bases. Déconstruis chaque concept complexe en briques élémentaires avant de construire la leçon.
+2. Adaptation au Programme :
+   Le contenu doit couvrir les points clés du programme officiel identifié via la recherche.
 
-2. La Hiérarchie Cognitive :
-
-   - Pour un profil Débutant/Élève : Priorité absolue à l'analogie concrète et au quotidien. Évite tout jargon.
-
-   - Pour un profil Professionnel : Utilise des métaphores liées à l'efficacité, aux systèmes ou à la stratégie, tout en restant accessible.
-
-3. Règle de la Métaphore Visuelle : Chaque section doit être illustrée par une image mentale forte (ex: l'électricité comparée à un débit d'eau).
-
-4. Précision Prudente : Privilégie la logique du mécanisme. Si une donnée est incertaine (chiffres, dates), utilise des formulations prudentes (ex: 'environ', 'aux alentours de') ou concentre-toi sur le concept.
-
-5. Élasticité du Ton : Adapte subtilement ton vocabulaire au niveau détecté : ${educationLevel ? `Niveau cible : ${educationLevel}` : 'Niveau : Vulgarisation universelle'}.
-
-Objectif Final : À la fin de la leçon, l'utilisateur doit être capable d'expliquer ce qu'il vient d'entendre à un enfant de 10 ans.
+3. Règle de la Métaphore Visuelle : Chaque section doit être illustrée par une image mentale forte.
 `
     }
 
     const prompt = `
 Crée un plan de cours détaillé pour le sujet: "${title}"
 
+${searchContext}
 ${audienceContext}
 
 Le cours doit être structuré comme suit:
-- Une description générale du cours
-- 3-4 grandes sections principales
+- Une description générale du cours (mentionnant qu'il est adapté au programme identifié si applicable)
+- 3-5 grandes sections principales (basées sur le programme officiel trouvé)
 - Chaque section doit avoir 2-3 sous-parties
 - Chaque sous-partie doit avoir:
   * Un titre clair
@@ -81,26 +112,16 @@ Le cours doit être structuré comme suit:
 - Une conclusion pédagogique
 
 IMPORTANT pour la CONCLUSION:
-- NE récite PAS le plan de cours ou la structure
-- NE liste PAS les sections abordées
-- Rédige une conclusion NATURELLE et PÉDAGOGIQUE qui:
-  * Résume les 2-3 apprentissages clés en 2-3 phrases maximum
-  * Encourage l'apprenant avec un ton positif et motivant
-  * Ouvre sur une perspective ou application pratique
-- Exemple de BON format: "Nous avons découvert comment [concept clé] fonctionne grâce à [mécanisme]. Cette compréhension vous permettra de [application pratique]. Continuez à explorer ce sujet fascinant !"
-- Exemple de MAUVAIS format: "Dans ce cours, nous avons vu la section 1 sur..., puis la section 2 sur..., et enfin la section 3..."
-
+- NE récite PAS le plan de cours
+- Résume les apprentissages clés et ouvre sur une perspective pratique
 
 IMPORTANT pour les mots-clés d'images (imageQuery):
 - Utilise des termes simples et précis qui existent sur Wikipedia française
-- Privilégie les noms communs plutôt que les concepts abstraits
-- Évite les termes trop spécifiques ou techniques
-- Exemples de bons mots-clés: "atome", "révolution française", "photosynthèse", "système solaire", "ADN", "volcan"
-- Évite les mots-clés comme: "concept de", "théorie de", "principe de"
+- Privilégie les noms communs
 
 Réponds UNIQUEMENT avec un JSON valide dans ce format:
 {
-  "title": "titre du cours",
+  "title": "titre du cours (adapté au programme)",
   "description": "description générale",
   "sections": [
     {
@@ -112,15 +133,9 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
           "imageQuery": "mot-clé simple pour Wikipedia"
         }
       ]
-      ]
-    },
-    {
-       "title": "Titre section complexe",
-       "check_understanding": true,
-       "subsections": [...]
     }
   ],
-  "conclusion": "Conclusion pédagogique naturelle qui résume les apprentissages clés"
+  "conclusion": "Conclusion pédagogique"
 }
 `
 

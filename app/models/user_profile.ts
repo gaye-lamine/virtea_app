@@ -15,6 +15,18 @@ export default class UserProfile extends BaseModel {
   declare specialty: string | null
 
   @column()
+  declare country: string | null
+
+  @column()
+  declare institutionName: string | null
+
+  @column()
+  declare series: string | null
+
+  @column()
+  declare studyYear: string | null
+
+  @column()
   declare name: string
 
   @column.date()

@@ -41,6 +41,10 @@ export class LessonGeneratorService {
       profileType: string
       educationLevel?: string
       specialty?: string
+      country?: string
+      institutionName?: string
+      series?: string
+      studyYear?: string
     }
   ): Promise<void> {
     try {
