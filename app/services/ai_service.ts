@@ -145,14 +145,8 @@ Génère le plan selon l'arborescence suivante :
         let parsed: any = JSON.parse(cleanText)
 
         // Sauvegarder le titre racine potentiel avant d'écraser 'parsed'
-        const rootTitle = parsed.titre_lecon_officiel || parsed.TitreLeconOfficiel || parsed['Titre de la Leçon'] || parsed.titre || parsed.title
+        const rootTitle = parsed.titre_lecon || parsed.titre_lecon_officiel || parsed.TitreLeconOfficiel || parsed['Titre de la Leçon'] || parsed.titre || parsed.title
         const rootDescription = parsed.description || parsed.Introduction || parsed.introduction
-
-        console.log('🔍 Debug Root Title:', {
-          keys: Object.keys(parsed),
-          rootTitle,
-          titre_lecon_officiel: parsed.titre_lecon_officiel
-        })
 
         // Tentative de récupération si le JSON est imbriqué (ex: { "plan_de_cours": { ... } })
         if (!parsed.sections && parsed.plan_de_cours) {
@@ -180,7 +174,7 @@ Génère le plan selon l'arborescence suivante :
           if (grandesParties.length > 0) {
             console.log('Clés trouvées dans la première partie:', Object.keys(grandesParties[0]))
           }
-          parsed.title = rootTitle || parsed.titre_lecon_officiel || parsed.TitreLeconOfficiel || parsed['Titre de la Leçon'] || parsed.titre || parsed.title || 'Titre de la leçon'
+          parsed.title = rootTitle || parsed.titre_lecon || parsed.titre_lecon_officiel || parsed.TitreLeconOfficiel || parsed['Titre de la Leçon'] || parsed.titre || parsed.title || 'Titre de la leçon'
           parsed.description = rootDescription || parsed.description || parsed.Introduction || parsed.introduction || `Leçon sur ${parsed.title}`
 
           parsed.sections = grandesParties.map((partie: any) => ({
