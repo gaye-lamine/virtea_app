@@ -144,6 +144,10 @@ Génère le plan selon l'arborescence suivante :
 
         let parsed: any = JSON.parse(cleanText)
 
+        // Sauvegarder le titre racine potentiel avant d'écraser 'parsed'
+        const rootTitle = parsed.titre_lecon_officiel || parsed.TitreLeconOfficiel || parsed['Titre de la Leçon'] || parsed.titre || parsed.title
+        const rootDescription = parsed.description || parsed.Introduction || parsed.introduction
+
         // Tentative de récupération si le JSON est imbriqué (ex: { "plan_de_cours": { ... } })
         if (!parsed.sections && parsed.plan_de_cours) {
           console.log('⚠️ Structure imbriquée détectée (plan_de_cours), tentative de récupération...')
@@ -170,8 +174,8 @@ Génère le plan selon l'arborescence suivante :
           if (grandesParties.length > 0) {
             console.log('Clés trouvées dans la première partie:', Object.keys(grandesParties[0]))
           }
-          parsed.title = parsed.titre_lecon_officiel || parsed.TitreLeconOfficiel || parsed['Titre de la Leçon'] || parsed.titre || parsed.title || 'Titre de la leçon'
-          parsed.description = parsed.description || parsed.Introduction || parsed.introduction || `Leçon sur ${parsed.title}`
+          parsed.title = rootTitle || parsed.titre_lecon_officiel || parsed.TitreLeconOfficiel || parsed['Titre de la Leçon'] || parsed.titre || parsed.title || 'Titre de la leçon'
+          parsed.description = rootDescription || parsed.description || parsed.Introduction || parsed.introduction || `Leçon sur ${parsed.title}`
 
           parsed.sections = grandesParties.map((partie: any) => ({
             title: partie.titre || partie.titre_partie || partie.titre_officiel || partie.nom || 'Titre manquant',
