@@ -42,101 +42,51 @@ export class AiService {
   }): Promise<LessonPlan> {
     const model = this.getGeminiModel()
 
-    // Adapter le niveau et le style selon le profil
-    let audienceContext = ''
-    let searchContext = ''
+    const { profileType, educationLevel, specialty, country, institutionName, series, studyYear } = userProfile || {}
 
-    if (userProfile) {
-      const { profileType, educationLevel, specialty, country, institutionName, series, studyYear } = userProfile
-
-      // 1. Contexte de Recherche (Grounding)
-      if (country) {
-        if (profileType === 'student') {
-          // Contexte Étudiant (Université/Grande École)
-          const univContext = institutionName ? `de l'université/école "${institutionName}"` : ''
-          const filiereContext = specialty ? `en filière "${specialty}"` : ''
-          const anneeContext = studyYear ? `niveau "${studyYear}"` : ''
-
-          searchContext = `
-CONTEXTE ACADÉMIQUE SPÉCIFIQUE :
-L'apprenant est un étudiant ${univContext} ${filiereContext} ${anneeContext} au ${country}.
-TÂCHE DE RECHERCHE OBLIGATOIRE :
-Utilise Google Search pour trouver le programme officiel ou le syllabus standard pour le cours "${title}" correspondant exactement à ce niveau universitaire et cette filière au ${country}.
-Base la structure du cours sur ce programme officiel.
-`
-        } else {
-          // Contexte Élève (Lycée/Collège)
-          const niveauContext = educationLevel ? `niveau "${educationLevel}"` : ''
-          const serieContext = series ? `série/filière "${series}"` : ''
-
-          searchContext = `
-CONTEXTE SCOLAIRE SPÉCIFIQUE :
-L'apprenant est un élève ${niveauContext} ${serieContext} au ${country}.
-TÂCHE DE RECHERCHE OBLIGATOIRE :
-Utilise Google Search pour trouver le programme scolaire officiel national du ${country} pour la matière concernée par "${title}" à ce niveau spécifique (${educationLevel} ${series}).
-Le plan de cours DOIT correspondre strictement aux chapitres/compétences exigés par le ministère de l'éducation du ${country} pour cette classe.
-`
-        }
-      }
-
-      // 2. Contexte Pédagogique (Ton et Approche)
-      audienceContext = `
-IMPORTANT - PRINCIPE DE TRANSMISSION UNIVERSELLE :
-Tu dois agir comme un "Traducteur de Complexité".
-
-1. La Hiérarchie Cognitive :
-   ${profileType === 'pupil' ? '- Profil Élève : Priorité à l\'analogie concrète, aux exemples du quotidien et à la préparation aux examens officiels.' : '- Profil Étudiant : Rigueur académique, terminologie précise de la filière, mais explications claires.'}
-
-2. Adaptation au Programme :
-   Le contenu doit couvrir les points clés du programme officiel identifié via la recherche.
-
-3. Règle de la Métaphore Visuelle : Chaque section doit être illustrée par une image mentale forte.
-`
-    }
-
+    // Construction du Prompt Maître V5 : Génération de Plan Académique Certifié
     const prompt = `
-Crée un plan de cours détaillé pour le sujet: "${title}"
+Agis en tant qu'expert en ingénierie pédagogique et spécialiste des systèmes éducatifs internationaux. Ta mission est de concevoir un plan de cours 100% conforme à la réalité scolaire de l'élève.
 
-${searchContext}
-${audienceContext}
+1. ANALYSE ET IDENTIFICATION
+• Analyse le titre saisi : '${title}'.
+• Détermine précisément la Matière Scolaire correspondante pour le profil suivant : ${profileType === 'pupil' ? `Élève de ${educationLevel} ${series || ''}` : `Étudiant ${institutionName ? `à ${institutionName}` : ''} en ${specialty || ''} (${studyYear || ''})`} au ${country || 'International'}.
 
-Le cours doit être structuré comme suit:
-- Une description générale du cours (mentionnant qu'il est adapté au programme identifié si applicable)
-- 3-5 grandes sections principales (basées sur le programme officiel trouvé)
-- Chaque section doit avoir 2-3 sous-parties
-- Chaque sous-partie doit avoir:
-  * Un titre clair
-  * Un contenu explicatif détaillé (2-3 paragraphes)
-  * Des mots-clés optimisés pour rechercher une image illustrative sur Wikipedia française
-- Chaque section peut avoir une pause de compréhension (check_understanding) si le concept est complexe
-- Une conclusion pédagogique
+2. RECHERCHE WEB EN TEMPS RÉEL (GOOGLE SEARCH)
+• Effectue une recherche approfondie pour trouver le programme officiel national ou le référentiel pédagogique du Ministère de l'Éducation ${country ? `du ${country}` : ''} pour cette matière et ce niveau.
+• Cherche les sommaires de manuels scolaires agréés ou les fiches de cours officielles du pays.
 
-IMPORTANT pour la CONCLUSION:
-- NE récite PAS le plan de cours
-- Résume les apprentissages clés et ouvre sur une perspective pratique
+3. EXTRACTION ET MAPPING (PRIORITÉ À LA SOURCE)
+• Si une source officielle est trouvée : Extrais et recopie fidèlement la structure du chapitre correspondant à '${title}'. Tu DOIS utiliser les intitulés exacts du ministère.
+• Si le titre est approximatif : Identifie le chapitre officiel qui s'en rapproche le plus (le 'Parent Topic').
+• Si aucune source n'est accessible : Synthétise un plan basé sur les standards académiques stricts du pays, mais privilégie toujours l'extraction de données réelles du web.
 
-IMPORTANT pour les mots-clés d'images (imageQuery):
-- Utilise des termes simples et précis qui existent sur Wikipedia française
-- Privilégie les noms communs
+4. INGÉNIERIE PÉDAGOGIQUE DU PLAN
+• Découpe le chapitre en Sections logiques (Grandes Parties).
+• Chaque section doit être conçue pour un format Audio-Visuel (titre percutant + image illustrative potentielle).
+• Pour chaque section, liste les Concepts Clés obligatoires (sous-parties).
 
-Réponds UNIQUEMENT avec un JSON valide dans ce format:
+5. FORMAT DE SORTIE ET CONTRAINTES
+• Réponds UNIQUEMENT avec un JSON valide respectant scrupuleusement ce format :
 {
-  "title": "titre du cours (adapté au programme)",
-  "description": "description générale",
+  "title": "Titre académique officiel (tel qu'il apparaît dans le programme)",
+  "description": "Description générale du cours mentionnant son ancrage dans le programme officiel",
   "sections": [
     {
-      "title": "Titre de la section",
+      "title": "Titre de la section (Grandes Parties du programme)",
       "subsections": [
         {
-          "title": "Titre de la sous-partie",
-          "content": "Contenu explicatif détaillé...",
-          "imageQuery": "mot-clé simple pour Wikipedia"
+          "title": "Titre du concept clé (sous-partie)",
+          "content": "Contenu explicatif détaillé et pédagogique (2-3 paragraphes).",
+          "imageQuery": "mot-clé simple et précis pour rechercher une image illustrative sur Wikipedia (ex: nom commun)"
         }
       ]
     }
   ],
-  "conclusion": "Conclusion pédagogique"
+  "conclusion": "Conclusion pédagogique résumant les acquis essentiels."
 }
+
+• Interdiction formelle : Ne pas inventer de chapitres hors programme. Ne pas donner de contenu généraliste si une spécificité nationale existe.
 `
 
     // Retry with exponential backoff + jitter for transient errors (429, 503)
