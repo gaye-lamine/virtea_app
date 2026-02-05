@@ -148,6 +148,12 @@ Génère le plan selon l'arborescence suivante :
         const rootTitle = parsed.titre_lecon_officiel || parsed.TitreLeconOfficiel || parsed['Titre de la Leçon'] || parsed.titre || parsed.title
         const rootDescription = parsed.description || parsed.Introduction || parsed.introduction
 
+        console.log('🔍 Debug Root Title:', {
+          keys: Object.keys(parsed),
+          rootTitle,
+          titre_lecon_officiel: parsed.titre_lecon_officiel
+        })
+
         // Tentative de récupération si le JSON est imbriqué (ex: { "plan_de_cours": { ... } })
         if (!parsed.sections && parsed.plan_de_cours) {
           console.log('⚠️ Structure imbriquée détectée (plan_de_cours), tentative de récupération...')
