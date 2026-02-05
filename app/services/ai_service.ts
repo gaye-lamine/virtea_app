@@ -159,6 +159,9 @@ Génère le plan selon l'arborescence suivante :
           if (parsed.grandes_parties.length > 0) {
             console.log('Clés trouvées dans la première partie:', Object.keys(parsed.grandes_parties[0]))
           }
+          parsed.title = parsed.titre_lecon_officiel || parsed.TitreLeconOfficiel || parsed.titre || parsed.title || 'Titre de la leçon'
+          parsed.description = parsed.description || parsed.Introduction || parsed.introduction || `Leçon sur ${parsed.title}`
+
           parsed.sections = parsed.grandes_parties.map((partie: any) => ({
             title: partie.titre || partie.titre_partie || partie.titre_officiel || partie.nom || 'Titre manquant',
             subsections: (partie.sous_parties || []).map((sous: any) => ({
