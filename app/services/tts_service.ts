@@ -66,6 +66,7 @@ export class TTSService {
    * - Nettoie les caractères problématiques
    */
   private normalizeTextForTTS(text: string): string {
+    if (!text) return ''
     return text
       // Utiliser l'apostrophe droite standard pour une meilleure compatibilité TTS
       // (Les apostrophes typographiques ’ peuvent causer des pauses incorrectes genre "L... être")

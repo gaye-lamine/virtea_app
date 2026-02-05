@@ -156,12 +156,15 @@ Génère le plan selon l'arborescence suivante :
         // Tentative de mapping si les clés sont en français
         if (!parsed.sections && parsed.grandes_parties) {
           console.log('⚠️ Structure avec clés françaises détectée, tentative de mapping...')
+          if (parsed.grandes_parties.length > 0) {
+            console.log('Clés trouvées dans la première partie:', Object.keys(parsed.grandes_parties[0]))
+          }
           parsed.sections = parsed.grandes_parties.map((partie: any) => ({
-            title: partie.titre || partie.titre_partie,
+            title: partie.titre || partie.titre_partie || partie.nom || 'Titre manquant',
             subsections: (partie.sous_parties || []).map((sous: any) => ({
-              title: sous.titre || sous.titre_sous_partie,
-              content: sous.contenu || sous.description,
-              imageQuery: sous.mots_cles_image || sous.imageQuery
+              title: sous.titre || sous.titre_sous_partie || sous.nom || 'Sous-titre manquant',
+              content: sous.contenu || sous.description || sous.texte || '',
+              imageQuery: sous.mots_cles_image || sous.imageQuery || sous.titre || 'image'
             }))
           }))
         }
@@ -171,60 +174,76 @@ Génère le plan selon l'arborescence suivante :
           console.warn('⚠️ JSON invalide reçu (toujours pas de sections):', JSON.stringify(parsed).substring(0, 200) + '...')
           throw new Error('Format de réponse invalide: "sections" manquant ou incorrect')
         }
-        parsed.sections.forEach((section: any) => {
-          if (section.subsections) {
-            section.subsections.forEach((subsection: any) => {
-              if (!subsection.imageQuery || subsection.imageQuery.trim() === '' || subsection.imageQuery === 'undefined') {
-                console.warn(`⚠️ imageQuery manquant pour "${subsection.title}", utilisation du titre comme fallback`)
-                // Utiliser le titre de la sous-partie ou de la section comme fallback
-                // Retirer les mots trop communs pour une recherche Wikipedia plus efficace
-                subsection.imageQuery = subsection.title || section.title
-              }
-            })
+        parsed.sections.forEach((section: any, index: number) => {
+          // Ensure section has a title
+          if (!section.title) {
+            section.title = `Section ${index + 1}`
           }
+
+          if (!section.subsections) {
+            section.subsections = []
+          }
+
+          section.subsections.forEach((subsection: any, subIndex: number) => {
+            // Ensure subsection has title and content
+            if (!subsection.title) {
+              subsection.title = `Sous-section ${subIndex + 1}`
+            }
+            if (!subsection.content) {
+              subsection.content = `Contenu en cours de rédaction pour ${subsection.title}.`
+            }
+
+            if (!subsection.imageQuery || subsection.imageQuery.trim() === '' || subsection.imageQuery === 'undefined') {
+              console.warn(`⚠️ imageQuery manquant pour "${subsection.title}", utilisation du titre comme fallback`)
+              // Utiliser le titre de la sous-partie ou de la section comme fallback
+              // Retirer les mots trop communs pour une recherche Wikipedia plus efficace
+              subsection.imageQuery = subsection.title || section.title || 'education'
+            }
+          })
+        }
         })
 
-        console.log('JSON parsé et validé avec succès')
-        return parsed
-      } catch (error: any) {
-        lastError = error
-        // try to detect HTTP status
-        const status = error?.status || error?.code || (error?.response && error.response.status) || null
-        console.error(`Erreur génération AI (tentative ${attempt}/${maxAttempts}):`, error?.message || error)
+      console.log('JSON parsé et validé avec succès')
+      return parsed
+    } catch (error: any) {
+      lastError = error
+      // try to detect HTTP status
+      const status = error?.status || error?.code || (error?.response && error.response.status) || null
+      console.error(`Erreur génération AI (tentative ${attempt}/${maxAttempts}):`, error?.message || error)
 
-        // Retry on Rate Limit (429), Service Unavailable (503), OR JSON Syntax Error
-        const isTransient = status === 429 || status === 503
-        const isJsonError = error instanceof SyntaxError || error.message.includes('JSON') || error.message.includes('Format de réponse invalide')
+      // Retry on Rate Limit (429), Service Unavailable (503), OR JSON Syntax Error
+      const isTransient = status === 429 || status === 503
+      const isJsonError = error instanceof SyntaxError || error.message.includes('JSON') || error.message.includes('Format de réponse invalide')
 
-        if ((isTransient || isJsonError) && attempt < maxAttempts) {
-          // Prefer Retry-After header if available
-          let waitTime = null
-          try {
-            const retryAfter = error?.response?.headers?.['retry-after'] || error?.headers?.['retry-after'] || null
-            if (retryAfter) {
-              const sec = parseInt(retryAfter, 10)
-              if (!Number.isNaN(sec)) waitTime = sec * 1000
-            }
-          } catch (e) {
-            // ignore
+      if ((isTransient || isJsonError) && attempt < maxAttempts) {
+        // Prefer Retry-After header if available
+        let waitTime = null
+        try {
+          const retryAfter = error?.response?.headers?.['retry-after'] || error?.headers?.['retry-after'] || null
+          if (retryAfter) {
+            const sec = parseInt(retryAfter, 10)
+            if (!Number.isNaN(sec)) waitTime = sec * 1000
           }
-
-          if (!waitTime) {
-            // exponential backoff base 1000ms with jitter
-            const base = 1000 * Math.pow(2, attempt - 1)
-            const jitter = Math.floor(Math.random() * 1000)
-            waitTime = base + jitter
-          }
-
-          console.log(`⏳ Attente de ${waitTime}ms avant nouvelle tentative (cause: ${isTransient ? 'API' : 'JSON'})...`)
-          await new Promise(resolve => setTimeout(resolve, waitTime))
-          continue
+        } catch (e) {
+          // ignore
         }
 
-        // For other errors or if out of attempts, break and throw below
-        break
+        if (!waitTime) {
+          // exponential backoff base 1000ms with jitter
+          const base = 1000 * Math.pow(2, attempt - 1)
+          const jitter = Math.floor(Math.random() * 1000)
+          waitTime = base + jitter
+        }
+
+        console.log(`⏳ Attente de ${waitTime}ms avant nouvelle tentative (cause: ${isTransient ? 'API' : 'JSON'})...`)
+        await new Promise(resolve => setTimeout(resolve, waitTime))
+        continue
       }
+
+      // For other errors or if out of attempts, break and throw below
+      break
     }
+  }
 
     console.error(`Erreur génération AI après ${maxAttempts} tentatives: `, lastError)
     throw new Error('Impossible de générer le plan de cours: ' + (lastError?.message || lastError))
