@@ -62,10 +62,12 @@ export class LessonGeneratorService {
       // 2. Récupérer rapidement les images pour la première section
       console.log('Récupération des images pour la première section...')
       const firstSectionImages: string[] = []
-      if (lessonPlan.sections.length > 0) {
+      if (lessonPlan.sections && lessonPlan.sections.length > 0) {
         lessonPlan.sections[0].subsections.forEach(subsection => {
           firstSectionImages.push(subsection.imageQuery)
         })
+      } else {
+        console.warn('⚠️ Attention: Aucune section trouvée dans le plan de leçon')
       }
 
       const firstImages = await this.wikipediaService.getMultipleImages(firstSectionImages)

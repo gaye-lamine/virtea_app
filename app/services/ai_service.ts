@@ -144,6 +144,12 @@ Génère le plan selon l'arborescence suivante :
 
         const parsed: LessonPlan = JSON.parse(cleanText)
 
+        // Validation de la structure
+        if (!parsed.sections || !Array.isArray(parsed.sections)) {
+          console.warn('⚠️ JSON invalide reçu (pas de sections):', cleanText.substring(0, 200) + '...')
+          throw new Error('Format de réponse invalide: "sections" manquant ou incorrect')
+        }
+
         // Validation et correction des imageQuery manquantes
         if (parsed.sections) {
           parsed.sections.forEach(section => {
