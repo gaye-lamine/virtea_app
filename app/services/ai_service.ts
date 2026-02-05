@@ -200,50 +200,49 @@ Génère le plan selon l'arborescence suivante :
               subsection.imageQuery = subsection.title || section.title || 'education'
             }
           })
-        }
         })
 
-      console.log('JSON parsé et validé avec succès')
-      return parsed
-    } catch (error: any) {
-      lastError = error
-      // try to detect HTTP status
-      const status = error?.status || error?.code || (error?.response && error.response.status) || null
-      console.error(`Erreur génération AI (tentative ${attempt}/${maxAttempts}):`, error?.message || error)
+        console.log('JSON parsé et validé avec succès')
+        return parsed
+      } catch (error: any) {
+        lastError = error
+        // try to detect HTTP status
+        const status = error?.status || error?.code || (error?.response && error.response.status) || null
+        console.error(`Erreur génération AI (tentative ${attempt}/${maxAttempts}):`, error?.message || error)
 
-      // Retry on Rate Limit (429), Service Unavailable (503), OR JSON Syntax Error
-      const isTransient = status === 429 || status === 503
-      const isJsonError = error instanceof SyntaxError || error.message.includes('JSON') || error.message.includes('Format de réponse invalide')
+        // Retry on Rate Limit (429), Service Unavailable (503), OR JSON Syntax Error
+        const isTransient = status === 429 || status === 503
+        const isJsonError = error instanceof SyntaxError || error.message.includes('JSON') || error.message.includes('Format de réponse invalide')
 
-      if ((isTransient || isJsonError) && attempt < maxAttempts) {
-        // Prefer Retry-After header if available
-        let waitTime = null
-        try {
-          const retryAfter = error?.response?.headers?.['retry-after'] || error?.headers?.['retry-after'] || null
-          if (retryAfter) {
-            const sec = parseInt(retryAfter, 10)
-            if (!Number.isNaN(sec)) waitTime = sec * 1000
+        if ((isTransient || isJsonError) && attempt < maxAttempts) {
+          // Prefer Retry-After header if available
+          let waitTime = null
+          try {
+            const retryAfter = error?.response?.headers?.['retry-after'] || error?.headers?.['retry-after'] || null
+            if (retryAfter) {
+              const sec = parseInt(retryAfter, 10)
+              if (!Number.isNaN(sec)) waitTime = sec * 1000
+            }
+          } catch (e) {
+            // ignore
           }
-        } catch (e) {
-          // ignore
+
+          if (!waitTime) {
+            // exponential backoff base 1000ms with jitter
+            const base = 1000 * Math.pow(2, attempt - 1)
+            const jitter = Math.floor(Math.random() * 1000)
+            waitTime = base + jitter
+          }
+
+          console.log(`⏳ Attente de ${waitTime}ms avant nouvelle tentative (cause: ${isTransient ? 'API' : 'JSON'})...`)
+          await new Promise(resolve => setTimeout(resolve, waitTime))
+          continue
         }
 
-        if (!waitTime) {
-          // exponential backoff base 1000ms with jitter
-          const base = 1000 * Math.pow(2, attempt - 1)
-          const jitter = Math.floor(Math.random() * 1000)
-          waitTime = base + jitter
-        }
-
-        console.log(`⏳ Attente de ${waitTime}ms avant nouvelle tentative (cause: ${isTransient ? 'API' : 'JSON'})...`)
-        await new Promise(resolve => setTimeout(resolve, waitTime))
-        continue
+        // For other errors or if out of attempts, break and throw below
+        break
       }
-
-      // For other errors or if out of attempts, break and throw below
-      break
     }
-  }
 
     console.error(`Erreur génération AI après ${maxAttempts} tentatives: `, lastError)
     throw new Error('Impossible de générer le plan de cours: ' + (lastError?.message || lastError))
