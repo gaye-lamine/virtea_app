@@ -44,7 +44,7 @@ export class AiService {
 
     const { profileType, educationLevel, specialty, country, institutionName, series, studyYear } = userProfile || {}
 
-    // Construction du Prompt Maître V5 : Génération de Plan Académique Certifié
+    // Construction du Prompt Maître V6 : Génération de Plan Académique Certifié
     const prompt = `
 Agis en tant qu'expert en ingénierie pédagogique et spécialiste des systèmes éducatifs internationaux. Ta mission est de concevoir un plan de cours 100% conforme à la réalité scolaire de l'élève.
 
@@ -61,32 +61,17 @@ Agis en tant qu'expert en ingénierie pédagogique et spécialiste des systèmes
 • Si le titre est approximatif : Identifie le chapitre officiel qui s'en rapproche le plus (le 'Parent Topic').
 • Si aucune source n'est accessible : Synthétise un plan basé sur les standards académiques stricts du pays, mais privilégie toujours l'extraction de données réelles du web.
 
-4. INGÉNIERIE PÉDAGOGIQUE DU PLAN
-• Découpe le chapitre en Sections logiques (Grandes Parties).
-• Chaque section doit être conçue pour un format Audio-Visuel (titre percutant + image illustrative potentielle).
-• Pour chaque section, liste les Concepts Clés obligatoires (sous-parties).
+4. STRUCTURE PÉDAGOGIQUE DU PLAN
+Génère le plan selon l'arborescence suivante :
+• Introduction de la leçon.
+• Grandes Parties (titres officiels).
+• Sous-parties pour chaque Grande Partie (détails des leçons).
+• Conclusion de la leçon.
 
 5. FORMAT DE SORTIE ET CONTRAINTES
-• Réponds UNIQUEMENT avec un JSON valide respectant scrupuleusement ce format :
-{
-  "title": "Titre académique officiel (tel qu'il apparaît dans le programme)",
-  "description": "Description générale du cours mentionnant son ancrage dans le programme officiel",
-  "sections": [
-    {
-      "title": "Titre de la section (Grandes Parties du programme)",
-      "subsections": [
-        {
-          "title": "Titre du concept clé (sous-partie)",
-          "content": "Contenu explicatif détaillé et pédagogique (2-3 paragraphes).",
-          "imageQuery": "mot-clé simple et précis pour rechercher une image illustrative sur Wikipedia (ex: nom commun)"
-        }
-      ]
-    }
-  ],
-  "conclusion": "Conclusion pédagogique résumant les acquis essentiels."
-}
-
-• Interdiction formelle : Ne pas inventer de chapitres hors programme. Ne pas donner de contenu généraliste si une spécificité nationale existe.
+• Réponds exclusivement en suivant la structure JSON de référence fournie.
+• Interdiction formelle : Ne pas inventer de chapitres hors programme.
+• Le titre final de la leçon dans le JSON doit être l'intitulé académique officiel trouvé lors de la recherche.
 `
 
     // Retry with exponential backoff + jitter for transient errors (429, 503)
