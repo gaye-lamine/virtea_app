@@ -207,8 +207,25 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
           throw new Error('Format de réponse invalide (pas de JSON détecté)')
         }
 
-        const parsed = JSON.parse(cleanText)
-        console.log('JSON parsé avec succès')
+        const parsed: LessonPlan = JSON.parse(cleanText)
+
+        // Validation et correction des imageQuery manquantes
+        if (parsed.sections) {
+          parsed.sections.forEach(section => {
+            if (section.subsections) {
+              section.subsections.forEach(subsection => {
+                if (!subsection.imageQuery || subsection.imageQuery.trim() === '' || subsection.imageQuery === 'undefined') {
+                  console.warn(`⚠️ imageQuery manquant pour "${subsection.title}", utilisation du titre comme fallback`)
+                  // Utiliser le titre de la sous-partie ou de la section comme fallback
+                  // Retirer les mots trop communs pour une recherche Wikipedia plus efficace
+                  subsection.imageQuery = subsection.title || section.title
+                }
+              })
+            }
+          })
+        }
+
+        console.log('JSON parsé et validé avec succès')
         return parsed
       } catch (error: any) {
         lastError = error

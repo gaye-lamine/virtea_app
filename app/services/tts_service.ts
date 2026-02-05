@@ -67,8 +67,8 @@ export class TTSService {
    */
   private normalizeTextForTTS(text: string): string {
     return text
-      // Remplacer les apostrophes typographiques par des apostrophes droites
-      .replace(/['']/g, "'")
+      // Remplacer les apostrophes droites par des apostrophes typographiques (meilleure prosodie)
+      .replace(/['']/g, "’")
       // Remplacer les guillemets typographiques par des guillemets droits
       .replace(/[""]/g, '"')
       // Normaliser les espaces multiples

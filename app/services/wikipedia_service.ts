@@ -43,7 +43,7 @@ export class WikipediaService {
         format: 'json',
         list: 'search',
         srsearch: query,
-        srlimit: 5, // Essayer plusieurs résultats
+        srlimit: 5,
         origin: '*'
       }
 
