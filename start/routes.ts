@@ -77,6 +77,9 @@ router.group(() => {
   router.get('/quiz', '#controllers/quiz_controller.index')
 }).prefix('/api/v1')
 
+// Route pour les suggestions académiques
+router.post('/api/v1/suggestions', '#controllers/suggestions_controller.handle')
+
 transmit.registerRoutes()
 
 // Route de santé / health check
