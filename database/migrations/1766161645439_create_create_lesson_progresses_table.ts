@@ -8,15 +8,13 @@ export default class extends BaseSchema {
       table.increments('id')
       
       table.integer('lesson_id').unsigned().references('id').inTable('lessons').onDelete('CASCADE')
-      table.string('device_id').notNullable() // Lien avec user_profiles
+      table.string('device_id').notNullable()
       
-      // Progression
       table.integer('current_section_index').defaultTo(0)
       table.integer('current_subsection_index').defaultTo(0)
-      table.json('completed_sections').nullable() // Array des sections complétées
+      table.json('completed_sections').nullable()
       table.boolean('is_completed').defaultTo(false)
       
-      // Révision espacée
       table.timestamp('last_reviewed_at').nullable()
       table.timestamp('next_review_at').nullable()
       table.integer('review_count').defaultTo(0)
@@ -24,7 +22,6 @@ export default class extends BaseSchema {
       table.timestamp('created_at')
       table.timestamp('updated_at')
       
-      // Index pour performance
       table.index(['lesson_id', 'device_id'])
     })
   }

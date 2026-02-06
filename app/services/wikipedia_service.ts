@@ -13,7 +13,6 @@ export class WikipediaService {
     try {
       console.log(`🔍 Recherche image Wikipedia pour mot-clé Gemini: "${query}"`)
       
-      // Étape 1: Recherche directe avec le mot-clé généré par Gemini
       try {
         const directResponse = await axios.get(`${this.baseUrl}/page/summary/${encodeURIComponent(query)}`, {
           headers: {
@@ -35,7 +34,6 @@ export class WikipediaService {
         console.log(`⚠️ Recherche directe échouée pour "${query}":`, directError.message)
       }
 
-      // Étape 2: Recherche via l'API de recherche Wikipedia
       console.log(`🔄 Recherche via API pour: "${query}"`)
       const searchUrl = `https://fr.wikipedia.org/w/api.php`
       const searchParams = {
@@ -56,7 +54,6 @@ export class WikipediaService {
       })
       
       if (searchResult.data.query && searchResult.data.query.search.length > 0) {
-        // Essayer chaque résultat jusqu'à trouver une image
         for (const result of searchResult.data.query.search) {
           try {
             const pageTitle = result.title

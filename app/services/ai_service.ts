@@ -45,7 +45,7 @@ export class AiService {
 
     const { profileType, educationLevel, specialty, country, institutionName, series, studyYear } = userProfile || {}
 
-    // Construction du Prompt Maître V6 : Génération de Plan Académique Certifié
+
     const prompt = `
 Agis en tant qu'expert en ingénierie pédagogique et spécialiste des systèmes éducatifs internationaux. Ta mission est de concevoir un plan de cours 100% conforme à la réalité scolaire de l'élève.
 
@@ -101,7 +101,7 @@ Génère le plan selon l'arborescence suivante :
 • Le titre final de la leçon dans le JSON doit être l'intitulé académique officiel trouvé lors de la recherche.
 `
 
-    // Retry with exponential backoff + jitter for transient errors (429, 503)
+
     let lastError: any
     const maxAttempts = 5
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -113,16 +113,16 @@ Génère le plan selon l'arborescence suivante :
 
         console.log('Réponse AI reçue:', text.substring(0, 200) + '...')
 
-        // Nettoyer la réponse pour extraire le JSON
+
         let cleanText = text.trim()
 
-        // Supprimer balises markdown de début (```json, ```JSON, ```, etc)
+
         cleanText = cleanText.replace(/^```[a-zA-Z]*\s*/, '')
 
-        // Supprimer balises markdown de fin (```)
+
         cleanText = cleanText.replace(/```$/, '')
 
-        // Algorithme de recherche du premier objet JSON complet par équilibrage des accolades
+
         const firstOpen = cleanText.indexOf('{')
 
         if (firstOpen !== -1) {
@@ -160,7 +160,7 @@ Génère le plan selon l'arborescence suivante :
           if (endIndex !== -1) {
             cleanText = cleanText.substring(firstOpen, endIndex + 1)
           } else {
-            // Fallback si pas équilibré (ex: coupé)
+
             console.warn('JSON non équilibré détecté, tentative avec le reste du texte')
             cleanText = cleanText.substring(firstOpen)
           }
@@ -171,11 +171,11 @@ Génère le plan selon l'arborescence suivante :
 
         let parsed: any = JSON.parse(cleanText)
 
-        // Sauvegarder le titre racine potentiel avant d'écraser 'parsed'
+
         const rootTitle = parsed.titre_lecon || parsed.titre_lecon_officiel || parsed.TitreLeconOfficiel || parsed['Titre de la Leçon'] || parsed.titre || parsed.title || parsed.lesson_title || parsed['Lesson Title']
         const rootDescription = parsed.description || parsed.Introduction || parsed.introduction
 
-        // Tentative de récupération si le JSON est imbriqué (ex: { "plan_de_cours": { ... } })
+
         if (!parsed.sections && parsed.plan_de_cours) {
           console.log('⚠️ Structure imbriquée détectée (plan_de_cours), tentative de récupération...')
           parsed = parsed.plan_de_cours
@@ -192,10 +192,10 @@ Génère le plan selon l'arborescence suivante :
 
 
 
-        // Normalisation des clés racines possibles pour les grandes parties
+
         const grandesParties = parsed.grandes_parties || parsed['Grandes Parties'] || parsed.GrandesParties || parsed.sections
 
-        // Tentative de mapping si les clés sont en français ou structure alternative
+
         if (!parsed.sections && grandesParties) {
           console.log('⚠️ Structure avec clés françaises/alternatives détectée, tentative de mapping...')
           if (grandesParties.length > 0) {
@@ -214,13 +214,13 @@ Génère le plan selon l'arborescence suivante :
           }))
         }
 
-        // Validation de la structure
+
         if (!parsed.sections || !Array.isArray(parsed.sections)) {
           console.warn('⚠️ JSON invalide reçu (toujours pas de sections):', JSON.stringify(parsed).substring(0, 200) + '...')
           throw new Error('Format de réponse invalide: "sections" manquant ou incorrect')
         }
         parsed.sections.forEach((section: any, index: number) => {
-          // Ensure section has a title
+
           if (!section.title) {
             section.title = `Section ${index + 1}`
           }
@@ -230,7 +230,7 @@ Génère le plan selon l'arborescence suivante :
           }
 
           section.subsections.forEach((subsection: any, subIndex: number) => {
-            // Ensure subsection has title and content
+
             if (!subsection.title) {
               subsection.title = `Sous-section ${subIndex + 1}`
             }
@@ -240,8 +240,7 @@ Génère le plan selon l'arborescence suivante :
 
             if (!subsection.imageQuery || subsection.imageQuery.trim() === '' || subsection.imageQuery === 'undefined') {
               console.warn(`⚠️ imageQuery manquant pour "${subsection.title}", utilisation du titre comme fallback`)
-              // Utiliser le titre de la sous-partie ou de la section comme fallback
-              // Retirer les mots trop communs pour une recherche Wikipedia plus efficace
+
               subsection.imageQuery = subsection.title || section.title || 'education'
             }
           })
@@ -251,16 +250,16 @@ Génère le plan selon l'arborescence suivante :
         return parsed
       } catch (error: any) {
         lastError = error
-        // try to detect HTTP status
+
         const status = error?.status || error?.code || (error?.response && error.response.status) || null
         console.error(`Erreur génération AI (tentative ${attempt}/${maxAttempts}):`, error?.message || error)
 
-        // Retry on Rate Limit (429), Service Unavailable (503), OR JSON Syntax Error
+
         const isTransient = status === 429 || status === 503
         const isJsonError = error instanceof SyntaxError || error.message.includes('JSON') || error.message.includes('Format de réponse invalide')
 
         if ((isTransient || isJsonError) && attempt < maxAttempts) {
-          // Prefer Retry-After header if available
+
           let waitTime = null
           try {
             const retryAfter = error?.response?.headers?.['retry-after'] || error?.headers?.['retry-after'] || null
@@ -269,11 +268,11 @@ Génère le plan selon l'arborescence suivante :
               if (!Number.isNaN(sec)) waitTime = sec * 1000
             }
           } catch (e) {
-            // ignore
+
           }
 
           if (!waitTime) {
-            // exponential backoff base 1000ms with jitter
+
             const base = 1000 * Math.pow(2, attempt - 1)
             const jitter = Math.floor(Math.random() * 1000)
             waitTime = base + jitter
@@ -284,7 +283,7 @@ Génère le plan selon l'arborescence suivante :
           continue
         }
 
-        // For other errors or if out of attempts, break and throw below
+
         break
       }
     }

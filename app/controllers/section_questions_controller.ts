@@ -19,7 +19,7 @@ export default class SectionQuestionsController {
 
             const qaService = new QAGeneratorService()
 
-            // Récupérer le profil utilisateur via le device ID (optionnel, pour cohérence future)
+            // Récupérer le profil utilisateur via le device ID 
             // const deviceId = request.header('X-Device-Id')
             // const userProfile = await UserProfile.findBy('deviceId', deviceId)
 

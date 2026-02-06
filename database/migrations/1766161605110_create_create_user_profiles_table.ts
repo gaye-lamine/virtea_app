@@ -7,15 +7,13 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
       
-      // Informations d'onboarding
-      table.string('profile_type').notNullable() // Élève, Étudiant, Professionnel, Autre
-      table.string('education_level').nullable() // L1, M2, etc.
-      table.string('specialty').nullable() // Spécialité / filière
+      table.string('profile_type').notNullable()
+      table.string('education_level').nullable()
+      table.string('specialty').nullable()
       table.string('name').notNullable()
       table.date('birthdate').nullable()
       
-      // Préférences
-      table.string('device_id').unique().notNullable() // Pour identifier l'utilisateur
+      table.string('device_id').unique().notNullable()
       
       table.timestamp('created_at')
       table.timestamp('updated_at')

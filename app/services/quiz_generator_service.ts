@@ -37,7 +37,6 @@ export class QuizGeneratorService {
     try {
       console.log(`Génération Quiz pour la leçon: ${title}`)
       
-      // Adapter le niveau selon le profil
       let audienceContext = ''
       if (userProfile) {
         switch (userProfile.profileType) {
@@ -137,7 +136,6 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
       
       console.log('Réponse AI Quiz reçue:', text.substring(0, 200) + '...')
       
-      // Nettoyer la réponse pour extraire le JSON
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) {
         console.error('Pas de JSON trouvé dans la réponse Quiz:', text)

@@ -42,7 +42,6 @@ export class QAGeneratorService {
     try {
       console.log(`Génération Q&A pour la leçon: ${title}`)
 
-      // Adapter le niveau selon le profil
       let audienceContext = ''
       if (userProfile) {
         switch (userProfile.profileType) {
@@ -133,7 +132,6 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
 
       console.log('Réponse AI Q&A reçue:', text.substring(0, 200) + '...')
 
-      // Nettoyer la réponse pour extraire le JSON
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) {
         console.error('Pas de JSON trouvé dans la réponse Q&A:', text)
@@ -179,7 +177,6 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format:
     try {
       console.log(`Réponse à la question: ${question}`)
 
-      // Adapter le niveau selon le profil
       let audienceContext = ''
       if (userProfile) {
         switch (userProfile.profileType) {
@@ -240,10 +237,8 @@ Réponds directement sans formatage JSON, juste le texte de la réponse.
       const lesson = await Lesson.findOrFail(lessonId)
       const content = typeof lesson.content === 'string' ? JSON.parse(lesson.content) : lesson.content
 
-      // Trouver la section
       let section = content.sections.find((s: any) => s.id === sectionId)
 
-      // Fallback : si section non trouvée et ID numérique => chercher par index
       if (!section && /^\d+$/.test(sectionId)) {
         const index = parseInt(sectionId, 10)
         if (index >= 0 && index < content.sections.length) {
@@ -256,10 +251,8 @@ Réponds directement sans formatage JSON, juste le texte de la réponse.
         throw new Error('Section non trouvée')
       }
 
-      // Contexte spécifique à la section
       const sectionContext = JSON.stringify(section, null, 2)
 
-      // Prompt rassurant et contextuel
       const prompt = `
 Tu es un tuteur pédagogue et bienveillant. Un élève n'a pas compris cette section de cours :
 
@@ -280,11 +273,10 @@ Réponds uniquement avec le texte à oraliser.
       const result = await this.aiService.getGeminiModel().generateContent(prompt)
       const answerText = (await result.response).text().trim()
 
-      // Générer audio
       console.log('Génération audio pour réponse Q&A...')
       const audioBuffer = await this.ttsService.generateAudio({
         text: answerText,
-        voiceName: 'fr-FR-Neural2-A' // Voix douce pour les explications
+        voiceName: 'fr-FR-Neural2-A'
       })
 
       const filename = `qa_${lessonId}_${sectionId}_${Date.now()}`

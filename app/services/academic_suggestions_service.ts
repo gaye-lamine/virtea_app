@@ -7,12 +7,10 @@ export default class AcademicSuggestionsService {
             return []
         }
 
-        // Normalisation pour la comparaison (minuscules, sans accents basiques si besoin, mais ici simple)
         const normalizedCountry = country.trim().toLowerCase()
 
         if (normalizedCountry === 'sénégal' || normalizedCountry === 'senegal') {
             if (!university) {
-                // Retourner la liste des universités
                 return [
                     'Université Cheikh Anta Diop (UCAD)',
                     'Université Gaston Berger (UGB)',
@@ -29,10 +27,6 @@ export default class AcademicSuggestionsService {
                     'BEM Management School',
                 ]
             } else {
-                // Retourner la liste des facultés/filières si une université est sélectionnée
-                // Pour l'instant, on retourne un ensemble générique + spécifique si possible
-                // Idéalement, on aurait une map { "UCAD": [...] }
-
                 const normalizedUni = university.trim().toLowerCase()
 
                 if (normalizedUni.includes('ucad') || normalizedUni.includes('cheikh anta diop')) {
@@ -61,7 +55,6 @@ export default class AcademicSuggestionsService {
                     ]
                 }
 
-                // Fallback générique
                 return [
                     'Droit',
                     'Médecine',
@@ -80,7 +73,6 @@ export default class AcademicSuggestionsService {
             }
         }
 
-        // Exemple pour la France
         if (normalizedCountry === 'france') {
             if (!university) {
                 return [

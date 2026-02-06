@@ -87,7 +87,7 @@ export default class LessonProgressesController {
           completedSections: data.completedSections || [],
           isCompleted: data.completed || data.isCompleted || false,
           lastReviewedAt: DateTime.now(),
-          nextReviewAt: DateTime.now().plus({ days: 2 }), // Révision dans 2 jours
+          nextReviewAt: DateTime.now().plus({ days: 2 }),
         })
       } else {
         if (data.currentStep !== undefined) {

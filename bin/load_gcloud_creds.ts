@@ -21,19 +21,15 @@ try {
         console.error('Failed to decode GOOGLE_CLOUD_CREDENTIALS_BASE64:', err.message)
       }
     } else if (inline) {
-      // Try to detect if inline is base64 or JSON
       const maybe = inline.trim()
-      // Heuristic: base64 strings are long and contain only base64 chars and padding
       const base64Regex = /^[A-Za-z0-9+/=\r\n]+$/
       if (maybe.length > 200 && base64Regex.test(maybe)) {
         try {
           jsonStr = Buffer.from(maybe, 'base64').toString('utf8')
         } catch (err) {
-          // fallback to using inline directly
           jsonStr = inline
         }
       } else {
-        // Inline JSON sometimes contains unescaped newlines; try to parse directly
         jsonStr = inline
       }
     }
@@ -46,11 +42,9 @@ try {
         fs.writeFileSync(out, JSON.stringify(parsed, null, 2), { mode: 0o600 })
         process.env.GOOGLE_APPLICATION_CREDENTIALS = out
         console.log('Google credentials file written to', out)
-        // Additional debug info
         if (base64) {
           console.log('GOOGLE_CLOUD_CREDENTIALS_BASE64 was used')
         } else if (inline) {
-          // detect if inline looked like base64
           const maybe = inline.trim()
           const base64Regex = /^[A-Za-z0-9+/=\r\n]+$/
           if (maybe.length > 200 && base64Regex.test(maybe)) {
